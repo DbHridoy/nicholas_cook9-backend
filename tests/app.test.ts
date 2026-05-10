@@ -35,4 +35,21 @@ describe("app routes", () => {
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
   });
+
+  it("validates login payloads", async () => {
+    const response = await request(app).post("/api/v1/auth/login").send({
+      email: "not-an-email",
+      password: "",
+    });
+
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
+  });
+
+  it("requires authentication for user profile routes", async () => {
+    const response = await request(app).get("/api/v1/users/me");
+
+    expect(response.status).toBe(401);
+    expect(response.body.success).toBe(false);
+  });
 });
