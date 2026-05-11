@@ -1,0 +1,129 @@
+{
+  "info": {
+    "name": "Nicholas Cook9 API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Create Dealer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dealer One\",\n  \"email\": \"dealer@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/dealers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "dealers"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Dealer One\",\n  \"email\": \"dealer@example.com\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/users/dealers",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "users",
+                    "dealers"
+                  ]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Dealer created successfully. Temporary password was sent by email.\",\n  \"data\": {\n    \"user\": {\n      \"_id\": \"663fb6d8a8d2f0c0e6edc111\",\n      \"name\": \"Dealer One\",\n      \"email\": \"dealer@example.com\",\n      \"role\": \"dealer\",\n      \"status\": \"active\",\n      \"createdBy\": \"663fb6d8a8d2f0c0e6edc000\",\n      \"createdAt\": \"2026-05-12T00:00:00.000Z\",\n      \"updatedAt\": \"2026-05-12T00:00:00.000Z\"\n    }\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('response has created dealer shape', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.success).to.eql(true);",
+                  "  pm.expect(json.data.user).to.include.keys(['_id', 'name', 'email', 'role', 'status']);",
+                  "  pm.expect(json.data.user.role).to.eql('dealer');",
+                  "  pm.expect(json.data.user).to.not.have.property('password');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5200"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    }
+  ]
+}

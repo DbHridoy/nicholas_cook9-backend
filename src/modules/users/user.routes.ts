@@ -3,13 +3,19 @@ import type { Router as ExpressRouter } from "express";
 import { authenticate, authorize } from "../auth/auth.middleware.js";
 import { validateBody } from "../../shared/middlewares/validate.middleware.js";
 import {
+  createDealer,
   createUser,
   getMyProfile,
   listUsers,
   updateMyProfile,
   updateUserStatus,
 } from "./user.controller.js";
-import { createUserSchema, updateMyProfileSchema, updateUserStatusSchema } from "./user.schemas.js";
+import {
+  createDealerSchema,
+  createUserSchema,
+  updateMyProfileSchema,
+  updateUserStatusSchema,
+} from "./user.schemas.js";
 
 export const userRouter: ExpressRouter = Router();
 
@@ -20,6 +26,12 @@ userRouter.patch("/me", validateBody(updateMyProfileSchema), updateMyProfile);
 
 userRouter.get("/", authorize("super_admin"), listUsers);
 userRouter.post("/", authorize("super_admin"), validateBody(createUserSchema), createUser);
+userRouter.post(
+  "/dealers",
+  authorize("admin", "super_admin"),
+  validateBody(createDealerSchema),
+  createDealer,
+);
 userRouter.patch(
   "/:userId/status",
   authorize("super_admin"),

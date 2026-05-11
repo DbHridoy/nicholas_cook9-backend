@@ -1,6 +1,7 @@
 import type { RequestHandler } from "express";
 import { asyncHandler } from "../../shared/utils/async-handler.js";
 import type {
+  CreateDealerInput,
   CreateUserInput,
   UpdateMyProfileInput,
   UpdateUserStatusInput,
@@ -13,6 +14,16 @@ export const createUser: RequestHandler = asyncHandler(async (req, res) => {
   res.status(201).json({
     success: true,
     message: "User created successfully",
+    data: { user },
+  });
+});
+
+export const createDealer: RequestHandler = asyncHandler(async (req, res) => {
+  const user = await userService.createDealer(req.body as CreateDealerInput, req.user!.id);
+
+  res.status(201).json({
+    success: true,
+    message: "Dealer created successfully. Temporary password was sent by email.",
     data: { user },
   });
 });
