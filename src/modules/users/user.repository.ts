@@ -86,4 +86,8 @@ export const userRepository = {
       },
     ).select(publicUserProjection);
   },
+
+  deleteById(id: string | Types.ObjectId) {
+    return User.findByIdAndDelete(id);
+  },
 };

@@ -15,6 +15,13 @@ export const createUserSchema = z.object({
   role: z.enum(manageableUserRoles).default("dealer"),
 });
 
+export const createDealerSchema = z
+  .object({
+    name: z.string().trim().min(2).max(80),
+    email: z.email().toLowerCase(),
+  })
+  .strict();
+
 export const updateMyProfileSchema = z.object({
   name: z.string().trim().min(2).max(80),
 });
@@ -24,5 +31,6 @@ export const updateUserStatusSchema = z.object({
 });
 
 export type CreateUserInput = z.infer<typeof createUserSchema>;
+export type CreateDealerInput = z.infer<typeof createDealerSchema>;
 export type UpdateMyProfileInput = z.infer<typeof updateMyProfileSchema>;
 export type UpdateUserStatusInput = z.infer<typeof updateUserStatusSchema>;
