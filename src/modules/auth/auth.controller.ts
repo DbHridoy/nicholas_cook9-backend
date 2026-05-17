@@ -4,6 +4,8 @@ import { asyncHandler } from "../../shared/utils/async-handler.js";
 import type {
   ForgotPasswordInput,
   LoginInput,
+  LogoutInput,
+  RefreshTokenInput,
   ResetPasswordInput,
   VerifyPasswordResetOtpInput,
 } from "./auth.schemas.js";
@@ -24,15 +26,28 @@ export const logout: RequestHandler = asyncHandler(async (req, res) => {
     throw new AppError(401, "Authentication token is required");
   }
 
+  const body = (req.body ?? {}) as LogoutInput;
+
   await authService.logout({
     userId: req.user.id,
     jti: req.token.jti,
     expiresAt: req.token.expiresAt,
+    refreshToken: body.refreshToken,
   });
 
   res.status(200).json({
     success: true,
     message: "Logged out successfully",
+  });
+});
+
+export const refreshToken: RequestHandler = asyncHandler(async (req, res) => {
+  const data = await authService.refreshToken(req.body as RefreshTokenInput);
+
+  res.status(200).json({
+    success: true,
+    message: "Token refreshed successfully",
+    data,
   });
 });
 
