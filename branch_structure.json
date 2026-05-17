@@ -1,0 +1,21 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "feat/auth-user-module",
+    "feat/contract",
+    "fix-logger",
+    "main"
+  ],
+  "parent": {
+    "feat/auth-user-module": "main",
+    "feat/contract": "main",
+    "fix-logger": "main",
+    "main": null
+  },
+  "order": [
+    "main",
+    "feat/auth-user-module",
+    "feat/contract",
+    "fix-logger"
+  ]
+}

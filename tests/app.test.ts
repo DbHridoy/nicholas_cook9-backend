@@ -46,6 +46,13 @@ describe("app routes", () => {
     expect(response.body.success).toBe(false);
   });
 
+  it("validates refresh token payloads", async () => {
+    const response = await request(app).post("/api/v1/auth/refresh").send({});
+
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
+  });
+
   it("requires authentication for user profile routes", async () => {
     const response = await request(app).get("/api/v1/users/me");
 

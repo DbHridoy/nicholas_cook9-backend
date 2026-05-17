@@ -9,6 +9,7 @@ type AppEnv = {
   CORS_ORIGIN: string;
   JWT_SECRET: string;
   JWT_ACCESS_EXPIRES_IN: string;
+  JWT_REFRESH_EXPIRES_IN: string;
   PASSWORD_RESET_OTP_EXPIRES_IN_MINUTES: number;
   PASSWORD_RESET_TOKEN_EXPIRES_IN_MINUTES: number;
   SUPER_ADMIN_NAME: string;
@@ -38,6 +39,7 @@ const cleanedEnv = cleanEnv(process.env, {
   CORS_ORIGIN: str({ default: "*" }),
   JWT_SECRET: str({ default: "replace-this-with-a-long-random-secret" }),
   JWT_ACCESS_EXPIRES_IN: str({ default: "1d" }),
+  JWT_REFRESH_EXPIRES_IN: str({ default: "30d" }),
   PASSWORD_RESET_OTP_EXPIRES_IN_MINUTES: num({ default: 10 }),
   PASSWORD_RESET_TOKEN_EXPIRES_IN_MINUTES: num({ default: 10 }),
   SUPER_ADMIN_NAME: str({ default: "Super Admin" }),
@@ -59,6 +61,7 @@ export const env: AppEnv = {
   CORS_ORIGIN: cleanedEnv.CORS_ORIGIN,
   JWT_SECRET: cleanedEnv.JWT_SECRET,
   JWT_ACCESS_EXPIRES_IN: cleanedEnv.JWT_ACCESS_EXPIRES_IN,
+  JWT_REFRESH_EXPIRES_IN: cleanedEnv.JWT_REFRESH_EXPIRES_IN,
   PASSWORD_RESET_OTP_EXPIRES_IN_MINUTES: cleanedEnv.PASSWORD_RESET_OTP_EXPIRES_IN_MINUTES,
   PASSWORD_RESET_TOKEN_EXPIRES_IN_MINUTES: cleanedEnv.PASSWORD_RESET_TOKEN_EXPIRES_IN_MINUTES,
   SUPER_ADMIN_NAME: cleanedEnv.SUPER_ADMIN_NAME,

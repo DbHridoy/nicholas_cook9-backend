@@ -1,15 +1,62 @@
 import { env } from "../../config/env.js";
 import { AppError } from "../../shared/errors/app-error.js";
+import { refreshTokenRepository } from "./refresh-token.repository.js";
 import { tokenBlacklistRepository } from "./token-blacklist.repository.js";
 import { userRepository } from "../users/user.repository.js";
 import type {
   ForgotPasswordInput,
   LoginInput,
+  RefreshTokenInput,
   ResetPasswordInput,
   VerifyPasswordResetOtpInput,
 } from "./auth.schemas.js";
-import { createOpaqueToken, createOtp, hashValue, signAccessToken } from "./auth.utils.js";
+import {
+  createOpaqueToken,
+  createOtp,
+  hashValue,
+  signAccessToken,
+  signRefreshToken,
+  verifyRefreshToken,
+} from "./auth.utils.js";
 import { sendPasswordResetOtp } from "./email.service.js";
+import type { UserRole, UserStatus } from "../users/user.types.js";
+
+type TokenUser = {
+  _id: { toString(): string };
+  name: string;
+  email: string;
+  role: UserRole;
+  status: UserStatus;
+};
+
+const createSession = async (user: TokenUser) => {
+  const accessToken = signAccessToken({
+    id: user._id.toString(),
+    email: user.email,
+    role: user.role,
+  });
+  const refreshToken = signRefreshToken({ id: user._id.toString() });
+
+  await refreshTokenRepository.create({
+    userId: user._id.toString(),
+    tokenHash: hashValue(refreshToken.token),
+    expiresAt: refreshToken.expiresAt,
+  });
+
+  return {
+    accessToken: accessToken.token,
+    refreshToken: refreshToken.token,
+    expiresAt: accessToken.expiresAt,
+    refreshTokenExpiresAt: refreshToken.expiresAt,
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+    },
+  };
+};
 
 export const login = async ({ email, password }: LoginInput) => {
   const user = await userRepository.findByEmailWithPassword(email);
@@ -22,27 +69,40 @@ export const login = async ({ email, password }: LoginInput) => {
     throw new AppError(403, "This account is blocked");
   }
 
-  const accessToken = signAccessToken({
-    id: user._id.toString(),
-    email: user.email,
-    role: user.role,
-  });
-
-  return {
-    accessToken: accessToken.token,
-    expiresAt: accessToken.expiresAt,
-    user: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      status: user.status,
-    },
-  };
+  return createSession(user);
 };
 
-export const logout = async (payload: { userId: string; jti: string; expiresAt: Date }) => {
+export const refreshToken = async ({ refreshToken }: RefreshTokenInput) => {
+  const payload = verifyRefreshToken(refreshToken);
+  const tokenHash = hashValue(refreshToken);
+  const storedToken = await refreshTokenRepository.findActiveByHash(tokenHash);
+
+  if (!storedToken || storedToken.user.toString() !== payload.sub) {
+    throw new AppError(401, "Refresh token is invalid");
+  }
+
+  const user = await userRepository.findById(payload.sub);
+
+  if (!user || user.status !== "active") {
+    throw new AppError(401, "Refresh token is invalid");
+  }
+
+  await refreshTokenRepository.revokeByHash(tokenHash);
+
+  return createSession(user);
+};
+
+export const logout = async (payload: {
+  userId: string;
+  jti: string;
+  expiresAt: Date;
+  refreshToken?: string;
+}) => {
   await tokenBlacklistRepository.revoke(payload);
+
+  if (payload.refreshToken) {
+    await refreshTokenRepository.revokeByHash(hashValue(payload.refreshToken));
+  }
 };
 
 export const requestPasswordReset = async ({ email }: ForgotPasswordInput) => {
