@@ -63,7 +63,7 @@ const createClaimNotifications = async (
   );
 };
 
-export const createClaim = async (payload: CreateClaimInput) => {
+export const createClaim = async (payload: CreateClaimInput, attachments: string[] = []) => {
   const contract = await contractRepository.findOne({ orderId: payload.orderId });
 
   if (!contract) {
@@ -75,6 +75,7 @@ export const createClaim = async (payload: CreateClaimInput) => {
     ...payload,
     dealer: contract.dealer,
     flooringType: flooringTypeFromProduct[contract.coveredProduct],
+    attachments,
   });
 
   await createClaimNotifications(claim, contract.dealer.toString());
