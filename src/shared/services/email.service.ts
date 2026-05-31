@@ -9,7 +9,7 @@ type EmailPayload = {
 };
 
 const createTransporter = () => {
-  if (!env.SMTP_HOST) {
+  if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASS) {
     return null;
   }
 
@@ -17,13 +17,10 @@ const createTransporter = () => {
     host: env.SMTP_HOST,
     port: env.SMTP_PORT,
     secure: env.SMTP_SECURE,
-    auth:
-      env.SMTP_USER && env.SMTP_PASS
-        ? {
-            user: env.SMTP_USER,
-            pass: env.SMTP_PASS,
-          }
-        : undefined,
+    auth: {
+      user: env.SMTP_USER,
+      pass: env.SMTP_PASS.replace(/\s/g, ""),
+    },
   });
 };
 
@@ -36,7 +33,7 @@ export const sendEmail = async ({ to, subject, text }: EmailPayload) => {
   }
 
   await transporter.sendMail({
-    from: env.EMAIL_FROM,
+    from: env.EMAIL_FROM || env.SMTP_USER,
     to,
     subject,
     text,

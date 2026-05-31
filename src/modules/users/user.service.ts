@@ -5,7 +5,8 @@ import type {
   UpdateMyProfileInput,
   UpdateUserStatusInput,
 } from "./user.schemas.js";
-import { sendDealerWelcomePassword } from "./dealer-email.service.js";
+import type { UserRole } from "./user.types.js";
+import { sendDealerWelcomePassword, sendUserWelcomePassword } from "./dealer-email.service.js";
 import { createTemporaryPassword } from "./password-generator.js";
 import { userRepository } from "./user.repository.js";
 
@@ -16,10 +17,27 @@ export const createUser = async (payload: CreateUserInput, creatorId: string) =>
     throw new AppError(409, "A user with this email already exists");
   }
 
+  const temporaryPassword = createTemporaryPassword();
   const user = await userRepository.create({
     ...payload,
+    password: temporaryPassword,
     createdBy: creatorId,
   });
+
+  try {
+    await sendUserWelcomePassword({
+      email: payload.email,
+      name: payload.name,
+      role: payload.role,
+      temporaryPassword,
+    });
+  } catch {
+    await userRepository.deleteById(user._id);
+    throw new AppError(
+      502,
+      "User account could not be created because the welcome email could not be sent. Verify SMTP configuration and try again.",
+    );
+  }
 
   return userRepository.findById(user._id);
 };
@@ -76,7 +94,13 @@ export const updateMyProfile = async (userId: string, payload: UpdateMyProfileIn
   return user;
 };
 
-export const listUsers = () => userRepository.findMany({ role: { $ne: "super_admin" } });
+export const listUsers = (requesterRole: UserRole) => {
+  if (requesterRole === "super_admin") {
+    return userRepository.findMany({ role: { $ne: "super_admin" } });
+  }
+
+  return userRepository.findMany({ role: "dealer" });
+};
 
 export const updateUserStatus = async (userId: string, payload: UpdateUserStatusInput) => {
   const user = await userRepository.findById(userId);

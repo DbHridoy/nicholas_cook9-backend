@@ -13,7 +13,7 @@ export const createUser: RequestHandler = asyncHandler(async (req, res) => {
 
   res.status(201).json({
     success: true,
-    message: "User created successfully",
+    message: "User created successfully. Temporary password was sent by email.",
     data: { user },
   });
 });
@@ -48,8 +48,8 @@ export const updateMyProfile: RequestHandler = asyncHandler(async (req, res) => 
   });
 });
 
-export const listUsers: RequestHandler = asyncHandler(async (_req, res) => {
-  const users = await userService.listUsers();
+export const listUsers: RequestHandler = asyncHandler(async (req, res) => {
+  const users = await userService.listUsers(req.user!.role);
 
   res.status(200).json({
     success: true,
