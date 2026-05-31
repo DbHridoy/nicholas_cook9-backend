@@ -9,6 +9,7 @@ export type Claim = {
   orderId: string;
   flooringType: string;
   description: string;
+  attachments: string[];
   status: ClaimStatus;
   createdAt?: Date;
   updatedAt?: Date;
@@ -62,6 +63,10 @@ const claimSchema = new Schema<Claim>(
       required: true,
       trim: true,
       maxlength: 2000,
+    },
+    attachments: {
+      type: [String],
+      default: [],
     },
     status: {
       type: String,

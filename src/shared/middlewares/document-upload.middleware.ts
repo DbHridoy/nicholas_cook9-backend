@@ -15,7 +15,7 @@ export const uploadDocument = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: env.S3_MAX_DOCUMENT_SIZE_MB * 1024 * 1024,
-    files: 1,
+    files: 10,
   },
   fileFilter: (_req, file, callback) => {
     if (!allowedDocumentMimeTypes.has(file.mimetype)) {

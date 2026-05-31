@@ -64,6 +64,7 @@ describe("claim service", () => {
       ...payload,
       dealer: "dealer-id",
       flooringType: "Hardwood",
+      attachments: ["https://s3.example.com/doc-1.pdf", "https://s3.example.com/doc-2.png"],
       status: "pending",
     };
 
@@ -87,6 +88,7 @@ describe("claim service", () => {
       ...payload,
       dealer: "dealer-id",
       flooringType: "Hardwood",
+      attachments: [],
     });
     expect(notificationRepositoryMocks.createMany).toHaveBeenCalledWith([
       {
