@@ -4,18 +4,21 @@
     "feat/auth-user-module",
     "feat/contract",
     "fix-logger",
+    "fix/user",
     "main"
   ],
   "parent": {
     "feat/auth-user-module": "main",
     "feat/contract": "main",
     "fix-logger": "main",
+    "fix/user": "main",
     "main": null
   },
   "order": [
     "main",
     "feat/auth-user-module",
     "feat/contract",
-    "fix-logger"
+    "fix-logger",
+    "fix/user"
   ]
 }
