@@ -8,6 +8,9 @@ export type User = {
   password: string;
   role: UserRole;
   status: UserStatus;
+  avatar?: string;
+  address?: string;
+  mobile?: string;
   passwordChangedAt?: Date;
   passwordResetOtpHash?: string;
   passwordResetOtpExpiresAt?: Date;
@@ -56,6 +59,18 @@ const userSchema = new Schema<User, UserModel, UserMethods>(
       enum: userStatuses,
       default: "active",
       index: true,
+    },
+    avatar: {
+      type: String,
+      trim: true,
+    },
+    address: {
+      type: String,
+      trim: true,
+    },
+    mobile: {
+      type: String,
+      trim: true,
     },
     passwordChangedAt: Date,
     passwordResetOtpHash: {

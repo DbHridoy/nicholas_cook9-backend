@@ -2,7 +2,7 @@ import type { QueryFilter, Types, UpdateQuery } from "mongoose";
 import { User, type User as UserEntity, type UserDocument } from "./user.model.js";
 import type { UserRole, UserStatus } from "./user.types.js";
 
-const publicUserProjection = "name email role status createdAt updatedAt createdBy";
+const publicUserProjection = "name email role status avatar address mobile createdAt updatedAt createdBy";
 
 type CreateUserPayload = {
   name: string;
@@ -12,7 +12,7 @@ type CreateUserPayload = {
   createdBy: string;
 };
 
-type UpdateUserPayload = Partial<Pick<UserEntity, "name" | "status" | "role">>;
+type UpdateUserPayload = Partial<Pick<UserEntity, "name" | "status" | "role" | "avatar" | "address" | "mobile">>;
 
 export const userRepository = {
   publicProjection: publicUserProjection,
@@ -27,6 +27,10 @@ export const userRepository = {
 
   findById(id: string | Types.ObjectId) {
     return User.findById(id).select(publicUserProjection);
+  },
+
+  findByIdWithPassword(id: string | Types.ObjectId) {
+    return User.findById(id).select("+password");
   },
 
   findByEmail(email: string) {

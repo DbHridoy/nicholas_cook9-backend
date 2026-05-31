@@ -1,11 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppError } from "../src/shared/errors/app-error.js";
-import { createDealerSchema, createUserSchema } from "../src/modules/users/user.schemas.js";
+import {
+  changePasswordSchema,
+  createDealerSchema,
+  createUserSchema,
+} from "../src/modules/users/user.schemas.js";
 
 const repositoryMocks = vi.hoisted(() => ({
   existsByEmail: vi.fn(),
   create: vi.fn(),
   findById: vi.fn(),
+  findByIdWithPassword: vi.fn(),
   findMany: vi.fn(),
   deleteById: vi.fn(),
 }));
@@ -27,7 +32,7 @@ vi.mock("../src/modules/users/dealer-email.service.js", () => emailMocks);
 
 vi.mock("../src/modules/users/password-generator.js", () => passwordMocks);
 
-const { createDealer, createUser, listUsers } =
+const { changeMyPassword, createDealer, createUser, listUsers } =
   await import("../src/modules/users/user.service.js");
 
 describe("user service role-based creation", () => {
@@ -196,5 +201,110 @@ describe("user service listing", () => {
     await listUsers("admin");
 
     expect(repositoryMocks.findMany).toHaveBeenCalledWith({ role: "dealer" });
+  });
+});
+
+describe("user service password changes", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("changes the current user's password when the current password is correct", async () => {
+    const user = {
+      comparePassword: vi.fn().mockResolvedValue(true),
+      save: vi.fn().mockResolvedValue(undefined),
+      password: "hashed-current-password",
+    };
+    repositoryMocks.findByIdWithPassword.mockResolvedValue(user);
+
+    await expect(
+      changeMyPassword("user-id", {
+        currentPassword: "current-password",
+        newPassword: "new-password",
+      }),
+    ).resolves.toBeUndefined();
+
+    expect(repositoryMocks.findByIdWithPassword).toHaveBeenCalledWith("user-id");
+    expect(user.comparePassword).toHaveBeenCalledWith("current-password");
+    expect(user.password).toBe("new-password");
+    expect(user.save).toHaveBeenCalled();
+  });
+
+  it("rejects password changes when the account has no password set", async () => {
+    const user = {
+      comparePassword: vi.fn(),
+      save: vi.fn(),
+    };
+    repositoryMocks.findByIdWithPassword.mockResolvedValue(user);
+
+    await expect(
+      changeMyPassword("user-id", {
+        currentPassword: "current-password",
+        newPassword: "new-password",
+      }),
+    ).rejects.toMatchObject({
+      statusCode: 400,
+      message: "Password is not set for this account",
+    });
+
+    expect(user.comparePassword).not.toHaveBeenCalled();
+    expect(user.save).not.toHaveBeenCalled();
+  });
+
+  it("returns a controlled error when password comparison fails", async () => {
+    const user = {
+      comparePassword: vi.fn().mockRejectedValue(new Error("Invalid hash")),
+      save: vi.fn(),
+      password: "invalid-hash",
+    };
+    repositoryMocks.findByIdWithPassword.mockResolvedValue(user);
+
+    await expect(
+      changeMyPassword("user-id", {
+        currentPassword: "current-password",
+        newPassword: "new-password",
+      }),
+    ).rejects.toMatchObject({
+      statusCode: 400,
+      message: "Incorrect current password",
+    });
+
+    expect(user.save).not.toHaveBeenCalled();
+  });
+
+  it("rejects password changes when the current password is incorrect", async () => {
+    const user = {
+      comparePassword: vi.fn().mockResolvedValue(false),
+      save: vi.fn(),
+      password: "hashed-current-password",
+    };
+    repositoryMocks.findByIdWithPassword.mockResolvedValue(user);
+
+    await expect(
+      changeMyPassword("user-id", {
+        currentPassword: "wrong-password",
+        newPassword: "new-password",
+      }),
+    ).rejects.toMatchObject({
+      statusCode: 400,
+      message: "Incorrect current password",
+    });
+
+    expect(user.save).not.toHaveBeenCalled();
+  });
+
+  it("validates password change payloads", () => {
+    const validResult = changePasswordSchema.safeParse({
+      currentPassword: "current-password",
+      newPassword: "new-password",
+    });
+    const invalidResult = changePasswordSchema.safeParse({
+      currentPassword: "short",
+      newPassword: "new-password",
+      unexpected: true,
+    });
+
+    expect(validResult.success).toBe(true);
+    expect(invalidResult.success).toBe(false);
   });
 });

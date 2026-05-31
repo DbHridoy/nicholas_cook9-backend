@@ -58,7 +58,6 @@ describe("app routes", () => {
       name: "A",
       email: "not-an-email",
       orderId: "",
-      flooringType: "",
       description: "short",
     });
 

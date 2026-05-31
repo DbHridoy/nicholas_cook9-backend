@@ -21,6 +21,13 @@ type AppEnv = {
   SMTP_SECURE: boolean;
   SMTP_USER: string;
   SMTP_PASS: string;
+  AWS_REGION: string;
+  AWS_ACCESS_KEY_ID: string;
+  AWS_SECRET_ACCESS_KEY: string;
+  S3_BUCKET_NAME: string;
+  S3_PUBLIC_BASE_URL: string;
+  S3_DOCUMENTS_PREFIX: string;
+  S3_MAX_DOCUMENT_SIZE_MB: number;
 };
 
 const cleanedEnv = cleanEnv(process.env, {
@@ -51,6 +58,13 @@ const cleanedEnv = cleanEnv(process.env, {
   SMTP_SECURE: bool({ default: false }),
   SMTP_USER: str({ default: "" }),
   SMTP_PASS: str({ default: "" }),
+  AWS_REGION: str({ default: "" }),
+  AWS_ACCESS_KEY_ID: str({ default: "" }),
+  AWS_SECRET_ACCESS_KEY: str({ default: "" }),
+  S3_BUCKET_NAME: str({ default: "" }),
+  S3_PUBLIC_BASE_URL: str({ default: "" }),
+  S3_DOCUMENTS_PREFIX: str({ default: "documents" }),
+  S3_MAX_DOCUMENT_SIZE_MB: num({ default: 10 }),
 });
 
 export const env: AppEnv = {
@@ -73,4 +87,11 @@ export const env: AppEnv = {
   SMTP_SECURE: cleanedEnv.SMTP_SECURE,
   SMTP_USER: cleanedEnv.SMTP_USER,
   SMTP_PASS: cleanedEnv.SMTP_PASS,
+  AWS_REGION: cleanedEnv.AWS_REGION,
+  AWS_ACCESS_KEY_ID: cleanedEnv.AWS_ACCESS_KEY_ID,
+  AWS_SECRET_ACCESS_KEY: cleanedEnv.AWS_SECRET_ACCESS_KEY,
+  S3_BUCKET_NAME: cleanedEnv.S3_BUCKET_NAME,
+  S3_PUBLIC_BASE_URL: cleanedEnv.S3_PUBLIC_BASE_URL,
+  S3_DOCUMENTS_PREFIX: cleanedEnv.S3_DOCUMENTS_PREFIX,
+  S3_MAX_DOCUMENT_SIZE_MB: cleanedEnv.S3_MAX_DOCUMENT_SIZE_MB,
 };

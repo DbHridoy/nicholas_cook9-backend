@@ -9,7 +9,6 @@ export const createClaimSchema = z
     email: z.email().toLowerCase(),
     orderId: orderIdentifierSchema.optional(),
     policyNumber: orderIdentifierSchema.optional(),
-    flooringType: z.string().trim().min(1).max(80),
     description: z.string().trim().min(10).max(2000),
   })
   .strict()

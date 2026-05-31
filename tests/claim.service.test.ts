@@ -5,14 +5,46 @@ const repositoryMocks = vi.hoisted(() => ({
   create: vi.fn(),
   findMany: vi.fn(),
   findById: vi.fn(),
-  updateStatus: vi.fn(),
+  findByClaimId: vi.fn(),
+  findOne: vi.fn(),
+  updateStatusById: vi.fn(),
+  updateStatusByClaimId: vi.fn(),
+}));
+
+const contractRepositoryMocks = vi.hoisted(() => ({
+  findMany: vi.fn(),
+  findOne: vi.fn(),
+}));
+
+const userRepositoryMocks = vi.hoisted(() => ({
+  findMany: vi.fn(),
+}));
+
+const notificationRepositoryMocks = vi.hoisted(() => ({
+  createMany: vi.fn(),
+}));
+
+vi.mock("node:crypto", () => ({
+  randomUUID: vi.fn(() => "abcdef1234567890abcdef1234567890"),
 }));
 
 vi.mock("../src/modules/claims/claim.repository.js", () => ({
   claimRepository: repositoryMocks,
 }));
 
-const { createClaim, updateClaimStatus } = await import("../src/modules/claims/claim.service.js");
+vi.mock("../src/modules/contracts/contract.repository.js", () => ({
+  contractRepository: contractRepositoryMocks,
+}));
+
+vi.mock("../src/modules/users/user.repository.js", () => ({
+  userRepository: userRepositoryMocks,
+}));
+
+vi.mock("../src/modules/notifications/notification.repository.js", () => ({
+  notificationRepository: notificationRepositoryMocks,
+}));
+
+const { createClaim, getClaim, updateClaimStatus } = await import("../src/modules/claims/claim.service.js");
 
 describe("claim service", () => {
   beforeEach(() => {
@@ -24,34 +56,147 @@ describe("claim service", () => {
       name: "Customer One",
       email: "customer@example.com",
       orderId: "ORDER-1001",
-      flooringType: "Hardwood",
       description: "The order arrived with a damaged item.",
     };
     const createdClaim = {
       _id: "claim-id",
+      claimId: "CLM-ABCDEF123456",
       ...payload,
+      dealer: "dealer-id",
+      flooringType: "Hardwood",
       status: "pending",
     };
 
+    contractRepositoryMocks.findOne.mockResolvedValue({
+      _id: "contract-id",
+      orderId: "ORDER-1001",
+      dealer: "dealer-id",
+      coveredProduct: "hardwood",
+    });
     repositoryMocks.create.mockResolvedValue(createdClaim);
+    userRepositoryMocks.findMany.mockResolvedValue([
+      { _id: "admin-id", role: "admin" },
+      { _id: "super-admin-id", role: "super_admin" },
+    ]);
+    notificationRepositoryMocks.createMany.mockResolvedValue([]);
 
     await expect(createClaim(payload)).resolves.toEqual(createdClaim);
-    expect(repositoryMocks.create).toHaveBeenCalledWith(payload);
+    expect(contractRepositoryMocks.findOne).toHaveBeenCalledWith({ orderId: "ORDER-1001" });
+    expect(repositoryMocks.create).toHaveBeenCalledWith({
+      claimId: "CLM-ABCDEF123456",
+      ...payload,
+      dealer: "dealer-id",
+      flooringType: "Hardwood",
+    });
+    expect(notificationRepositoryMocks.createMany).toHaveBeenCalledWith([
+      {
+        recipient: "dealer-id",
+        claim: "claim-id",
+        type: "claim_created",
+        title: "New claim submitted",
+        message: "A new claim CLM-ABCDEF123456 was submitted for order ORDER-1001 by Customer One.",
+      },
+      {
+        recipient: "admin-id",
+        claim: "claim-id",
+        type: "claim_created",
+        title: "New claim submitted",
+        message: "A new claim CLM-ABCDEF123456 was submitted for order ORDER-1001 by Customer One.",
+      },
+      {
+        recipient: "super-admin-id",
+        claim: "claim-id",
+        type: "claim_created",
+        title: "New claim submitted",
+        message: "A new claim CLM-ABCDEF123456 was submitted for order ORDER-1001 by Customer One.",
+      },
+    ]);
+  });
+
+  it("returns a clear error when the order id does not exist", async () => {
+    contractRepositoryMocks.findOne.mockResolvedValue(null);
+
+    await expect(
+      createClaim({
+        name: "Customer One",
+        email: "customer@example.com",
+        orderId: "INVALID-ORDER",
+        description: "The order arrived with a damaged item.",
+      }),
+    ).rejects.toMatchObject({
+      statusCode: 404,
+      message: "Order not found",
+    });
+
+    expect(repositoryMocks.create).not.toHaveBeenCalled();
+    expect(notificationRepositoryMocks.createMany).not.toHaveBeenCalled();
   });
 
   it("updates claim status to approved or denied only", async () => {
-    repositoryMocks.updateStatus.mockResolvedValue({
+    repositoryMocks.updateStatusByClaimId.mockResolvedValue({
       _id: "claim-id",
+      claimId: "CLM-ABCDEF123456",
       status: "approved",
     });
 
-    await expect(updateClaimStatus("claim-id", { status: "approved" })).resolves.toMatchObject({
+    await expect(updateClaimStatus("CLM-ABCDEF123456", { status: "approved" })).resolves.toMatchObject({
       status: "approved",
     });
 
     expect(updateClaimStatusSchema.safeParse({ status: "pending" }).success).toBe(false);
     expect(updateClaimStatusSchema.safeParse({ status: "denied" }).success).toBe(true);
-    expect(repositoryMocks.updateStatus).toHaveBeenCalledWith("claim-id", "approved");
+    expect(repositoryMocks.updateStatusByClaimId).toHaveBeenCalledWith(
+      "CLM-ABCDEF123456",
+      "approved",
+    );
+  });
+
+  it("retrieves claims by claim ID or Mongo ID", async () => {
+    const claim = {
+      _id: "6a1ca7830ac3eb315a4201ec",
+      claimId: "CLM-ABCDEF123456",
+      dealer: { toString: () => "dealer-id" },
+    };
+
+    repositoryMocks.findByClaimId.mockResolvedValueOnce(claim);
+
+    await expect(
+      getClaim("clm-abcdef123456", { id: "dealer-id", role: "dealer" }),
+    ).resolves.toEqual(claim);
+    expect(repositoryMocks.findByClaimId).toHaveBeenCalledWith("clm-abcdef123456");
+    expect(repositoryMocks.findById).not.toHaveBeenCalled();
+
+    repositoryMocks.findByClaimId.mockResolvedValueOnce(null);
+    repositoryMocks.findById.mockResolvedValueOnce(claim);
+
+    await expect(
+      getClaim("6a1ca7830ac3eb315a4201ec", { id: "dealer-id", role: "dealer" }),
+    ).resolves.toEqual(claim);
+    expect(repositoryMocks.findById).toHaveBeenCalledWith("6a1ca7830ac3eb315a4201ec");
+  });
+
+  it("updates claim status by Mongo ID when the claim ID lookup misses", async () => {
+    repositoryMocks.updateStatusByClaimId.mockResolvedValue(null);
+    repositoryMocks.updateStatusById.mockResolvedValue({
+      _id: "6a1ca7830ac3eb315a4201ec",
+      claimId: "CLM-ABCDEF123456",
+      status: "denied",
+    });
+
+    await expect(
+      updateClaimStatus("6a1ca7830ac3eb315a4201ec", { status: "denied" }),
+    ).resolves.toMatchObject({
+      status: "denied",
+    });
+
+    expect(repositoryMocks.updateStatusByClaimId).toHaveBeenCalledWith(
+      "6a1ca7830ac3eb315a4201ec",
+      "denied",
+    );
+    expect(repositoryMocks.updateStatusById).toHaveBeenCalledWith(
+      "6a1ca7830ac3eb315a4201ec",
+      "denied",
+    );
   });
 
   it("validates claim creation payloads", () => {
@@ -72,7 +217,6 @@ describe("claim service", () => {
       name: "Customer One",
       email: "customer@example.com",
       policyNumber: "ORDER-1001",
-      flooringType: "Hardwood",
       description: "The order arrived with a damaged item.",
     });
 

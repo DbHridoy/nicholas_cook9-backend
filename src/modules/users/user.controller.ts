@@ -5,6 +5,7 @@ import type {
   CreateUserInput,
   UpdateMyProfileInput,
   UpdateUserStatusInput,
+  ChangePasswordInput,
 } from "./user.schemas.js";
 import * as userService from "./user.service.js";
 
@@ -55,6 +56,15 @@ export const updateMyProfile: RequestHandler = asyncHandler(async (req, res) => 
     success: true,
     message: "Profile updated successfully",
     data: { user },
+  });
+});
+
+export const changeMyPassword: RequestHandler = asyncHandler(async (req, res) => {
+  await userService.changeMyPassword(req.user!.id, req.body as ChangePasswordInput);
+
+  res.status(200).json({
+    success: true,
+    message: "Password changed successfully",
   });
 });
 

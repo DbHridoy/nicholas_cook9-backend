@@ -52,13 +52,25 @@ const redactRequestBody = (value: unknown): unknown => {
   );
 };
 
+const getCorsOrigin = (): boolean | string | string[] => {
+  if (env.CORS_ORIGIN === "*") {
+    return true;
+  }
+
+  const origins = env.CORS_ORIGIN.split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  return origins.length === 1 ? origins[0]! : origins;
+};
+
 export const createApp = (): Express => {
   const app = express();
 
   app.use(helmet());
   app.use(
     cors({
-      origin: env.CORS_ORIGIN === "*" ? true : env.CORS_ORIGIN,
+      origin: getCorsOrigin(),
       credentials: true,
     }),
   );

@@ -4,6 +4,7 @@ import type {
   CreateUserInput,
   UpdateMyProfileInput,
   UpdateUserStatusInput,
+  ChangePasswordInput,
 } from "./user.schemas.js";
 import type { UserRole } from "./user.types.js";
 import { sendDealerWelcomePassword, sendUserWelcomePassword } from "./dealer-email.service.js";
@@ -175,4 +176,30 @@ export const updateUserStatus = async (userId: string, payload: UpdateUserStatus
   }
 
   return userRepository.updateStatus(userId, payload.status);
+};
+
+export const changeMyPassword = async (userId: string, payload: ChangePasswordInput) => {
+  const user = await userRepository.findByIdWithPassword(userId);
+
+  if (!user) {
+    throw new AppError(404, "User not found");
+  }
+
+  if (!user.password) {
+    throw new AppError(400, "Password is not set for this account");
+  }
+
+  let isCurrentPasswordCorrect;
+  try {
+    isCurrentPasswordCorrect = await user.comparePassword(payload.currentPassword);
+  } catch {
+    throw new AppError(400, "Incorrect current password");
+  }
+
+  if (!isCurrentPasswordCorrect) {
+    throw new AppError(400, "Incorrect current password");
+  }
+
+  user.password = payload.newPassword;
+  await user.save();
 };

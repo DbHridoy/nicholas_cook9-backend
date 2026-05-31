@@ -1,5 +1,9 @@
+import { randomUUID } from "node:crypto";
+import { isValidObjectId } from "mongoose";
 import { AppError } from "../../shared/errors/app-error.js";
 import { contractRepository } from "../contracts/contract.repository.js";
+import { notificationRepository } from "../notifications/notification.repository.js";
+import { userRepository } from "../users/user.repository.js";
 import type { UserRole } from "../users/user.types.js";
 import { claimRepository } from "./claim.repository.js";
 import type { CreateClaimInput, UpdateClaimStatusInput } from "./claim.schemas.js";
@@ -9,34 +13,92 @@ type RequestUser = {
   role: UserRole;
 };
 
-export const createClaim = (payload: CreateClaimInput) => claimRepository.create(payload);
+const flooringTypeFromProduct = {
+  carpet: "Carpet",
+  lvp_laminate: "LVP / Laminate",
+  hardwood: "Hardwood",
+  tile: "Tile",
+} as const;
+
+const generateClaimId = () => `CLM-${randomUUID().replaceAll("-", "").slice(0, 12).toUpperCase()}`;
+
+const findClaimByIdentifier = async (identifier: string) => {
+  const claimByClaimId = await claimRepository.findByClaimId(identifier);
+
+  if (claimByClaimId || !isValidObjectId(identifier)) {
+    return claimByClaimId;
+  }
+
+  return claimRepository.findById(identifier);
+};
+
+const updateClaimStatusByIdentifier = async (
+  identifier: string,
+  status: UpdateClaimStatusInput["status"],
+) => {
+  const claimByClaimId = await claimRepository.updateStatusByClaimId(identifier, status);
+
+  if (claimByClaimId || !isValidObjectId(identifier)) {
+    return claimByClaimId;
+  }
+
+  return claimRepository.updateStatusById(identifier, status);
+};
+
+const createClaimNotifications = async (
+  claim: Awaited<ReturnType<typeof claimRepository.create>>,
+  dealerId: string,
+) => {
+  const admins = await userRepository.findMany({ role: { $in: ["admin", "super_admin"] } });
+  const recipientIds = Array.from(new Set([dealerId, ...admins.map((user) => user._id.toString())]));
+
+  await notificationRepository.createMany(
+    recipientIds.map((recipient) => ({
+      recipient,
+      claim: claim._id,
+      type: "claim_created" as const,
+      title: "New claim submitted",
+      message: `A new claim ${claim.claimId} was submitted for order ${claim.orderId} by ${claim.name}.`,
+    })),
+  );
+};
+
+export const createClaim = async (payload: CreateClaimInput) => {
+  const contract = await contractRepository.findOne({ orderId: payload.orderId });
+
+  if (!contract) {
+    throw new AppError(404, "Order not found");
+  }
+
+  const claim = await claimRepository.create({
+    claimId: generateClaimId(),
+    ...payload,
+    dealer: contract.dealer,
+    flooringType: flooringTypeFromProduct[contract.coveredProduct],
+  });
+
+  await createClaimNotifications(claim, contract.dealer.toString());
+
+  return claim;
+};
 
 export const listClaims = async (user: RequestUser) => {
   if (user.role !== "dealer") {
     return claimRepository.findMany();
   }
 
-  const contracts = await contractRepository.findMany({ dealer: user.id });
-  const orderIds = contracts.map((contract) => contract.orderId).filter(Boolean);
-
-  if (orderIds.length === 0) {
-    return [];
-  }
-
-  return claimRepository.findMany({ orderId: { $in: orderIds } });
+  return claimRepository.findMany({ dealer: user.id });
 };
 
 export const getClaim = async (claimId: string, user: RequestUser) => {
-  const claim = await claimRepository.findById(claimId);
+  const claim = await findClaimByIdentifier(claimId);
 
   if (!claim) {
     throw new AppError(404, "Claim not found");
   }
 
   if (user.role === "dealer") {
-    const contract = await contractRepository.findOne({ dealer: user.id, orderId: claim.orderId });
-
-    if (!contract) {
+    if (claim.dealer.toString() !== user.id) {
       throw new AppError(404, "Claim not found");
     }
   }
@@ -45,7 +107,7 @@ export const getClaim = async (claimId: string, user: RequestUser) => {
 };
 
 export const updateClaimStatus = async (claimId: string, payload: UpdateClaimStatusInput) => {
-  const claim = await claimRepository.updateStatus(claimId, payload.status);
+  const claim = await updateClaimStatusByIdentifier(claimId, payload.status);
 
   if (!claim) {
     throw new AppError(404, "Claim not found");

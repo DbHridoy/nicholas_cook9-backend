@@ -10,12 +10,14 @@ import {
   listUsers,
   updateMyProfile,
   updateUserStatus,
+  changeMyPassword,
 } from "./user.controller.js";
 import {
   createDealerSchema,
   createUserSchema,
   updateMyProfileSchema,
   updateUserStatusSchema,
+  changePasswordSchema,
 } from "./user.schemas.js";
 
 export const userRouter: ExpressRouter = Router();
@@ -24,6 +26,7 @@ userRouter.use(authenticate);
 
 userRouter.get("/me", getMyProfile);
 userRouter.patch("/me", validateBody(updateMyProfileSchema), updateMyProfile);
+userRouter.patch("/me/password", validateBody(changePasswordSchema), changeMyPassword);
 
 userRouter.get("/", authorize("admin", "super_admin"), listUsers);
 userRouter.post("/", authorize("super_admin"), validateBody(createUserSchema), createUser);

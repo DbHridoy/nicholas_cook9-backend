@@ -1,11 +1,24 @@
 import type { RequestHandler } from "express";
+import { AppError } from "../../shared/errors/app-error.js";
+import { uploadDocumentToS3 } from "../../shared/services/s3-document.service.js";
 import { asyncHandler } from "../../shared/utils/async-handler.js";
 import type { CreateContractInput } from "./contract.schemas.js";
 import * as contractService from "./contract.service.js";
 
 export const createContract: RequestHandler = asyncHandler(async (req, res) => {
+  const payload = req.body as CreateContractInput;
+
+  if (req.file) {
+    const uploadedDocument = await uploadDocumentToS3(req.file);
+    payload.file = uploadedDocument.url;
+  }
+
+  if (!payload.file) {
+    throw new AppError(400, "Contract document is required");
+  }
+
   const contract = await contractService.createContract(
-    req.body as CreateContractInput,
+    payload as CreateContractInput & { file: string },
     req.user!.id,
   );
 

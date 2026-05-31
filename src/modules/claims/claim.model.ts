@@ -2,6 +2,8 @@ import { model, Schema, type HydratedDocument, type Types } from "mongoose";
 import { claimStatuses, type ClaimStatus } from "./claim.types.js";
 
 export type Claim = {
+  claimId: string;
+  dealer: Types.ObjectId;
   name: string;
   email: string;
   orderId: string;
@@ -14,6 +16,21 @@ export type Claim = {
 
 const claimSchema = new Schema<Claim>(
   {
+    claimId: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+      uppercase: true,
+      trim: true,
+      maxlength: 32,
+    },
+    dealer: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
     name: {
       type: String,
       required: true,

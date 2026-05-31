@@ -9,8 +9,8 @@ export const createContractSchema = z
     installationDate: z.coerce.date(),
     coveredProduct: z.enum(coveredProducts),
     term: z.enum(contractTerms),
-    price: z.number().nonnegative(),
-    file: z.string().trim().min(1).max(2048),
+    price: z.coerce.number().nonnegative(),
+    file: z.string().trim().min(1).max(2048).optional(),
   })
   .strict();
 

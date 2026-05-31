@@ -4,7 +4,7 @@ import type { ClaimStatus } from "./claim.types.js";
 
 type CreateClaimPayload = Pick<
   ClaimEntity,
-  "name" | "email" | "orderId" | "flooringType" | "description"
+  "claimId" | "dealer" | "name" | "email" | "orderId" | "flooringType" | "description"
 >;
 
 export const claimRepository = {
@@ -16,11 +16,26 @@ export const claimRepository = {
     return Claim.findById(id);
   },
 
+  findByClaimId(claimId: string) {
+    return Claim.findOne({ claimId: claimId.toUpperCase() });
+  },
+
   findMany(filter: QueryFilter<ClaimEntity> = {}) {
     return Claim.find(filter).sort({ createdAt: -1 });
   },
 
-  updateStatus(id: string, status: Exclude<ClaimStatus, "pending">) {
+  updateStatusByClaimId(claimId: string, status: Exclude<ClaimStatus, "pending">) {
+    return Claim.findOneAndUpdate(
+      { claimId: claimId.toUpperCase() },
+      { status },
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
+  },
+
+  updateStatusById(id: string, status: Exclude<ClaimStatus, "pending">) {
     return Claim.findByIdAndUpdate(
       id,
       { status },
