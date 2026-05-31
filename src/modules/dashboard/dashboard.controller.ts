@@ -12,6 +12,16 @@ export const getDashboard: RequestHandler = asyncHandler(async (req, res) => {
   });
 });
 
+export const getDealerDashboardMetrics: RequestHandler = asyncHandler(async (req, res) => {
+  const dashboard = await dashboardService.getDealerDashboardMetrics(req.user!);
+
+  res.status(200).json({
+    success: true,
+    message: "Dealer dashboard metrics retrieved successfully",
+    data: { dashboard },
+  });
+});
+
 export const getAnalytics: RequestHandler = asyncHandler(async (req, res) => {
   const analytics = await dashboardService.getAnalytics(req.user!);
 

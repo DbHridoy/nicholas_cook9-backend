@@ -54,7 +54,8 @@ const formatTrend = (current: number, previous: number, previousLabel: string) =
 };
 
 const toRecentClaim = (claim: Claim & { _id?: unknown }) => ({
-  id: claim._id ? String(claim._id) : "",
+  id: "claimId" in claim && claim.claimId ? claim.claimId : claim._id ? String(claim._id) : "",
+  mongoId: claim._id ? String(claim._id) : "",
   customer: claim.name,
   email: claim.email,
   orderId: claim.orderId,
@@ -63,6 +64,26 @@ const toRecentClaim = (claim: Claim & { _id?: unknown }) => ({
   date: claim.createdAt,
   amount: null,
 });
+
+const toRecentClaimWithContracts =
+  (contractsByOrderId: Map<string, Contract & { _id?: unknown }>) =>
+  (claim: Claim & { _id?: unknown }) => ({
+    ...toRecentClaim(claim),
+    amount: contractsByOrderId.get(claim.orderId)?.price ?? null,
+  });
+
+const summarizeClaimsByStatus = (claims: Claim[]) =>
+  Object.entries(statusMeta).map(([status, meta]) => {
+    const count = claims.filter((claim) => claim.status === status).length;
+
+    return {
+      status,
+      label: meta.label,
+      color: meta.color,
+      count,
+      pct: claims.length ? Math.round((count / claims.length) * 100) : 0,
+    };
+  });
 
 export const getDashboard = async (user: RequestUser) => {
   const { start, end, previousStart, label, previousLabel } = getMonthRange();
@@ -91,17 +112,7 @@ export const getDashboard = async (user: RequestUser) => {
   const currentApprovedClaims = currentClaims.filter((claim) => claim.status === "approved");
   const previousApprovedClaims = previousClaims.filter((claim) => claim.status === "approved");
 
-  const claimsByStatus = Object.entries(statusMeta).map(([status, meta]) => {
-    const count = claims.filter((claim) => claim.status === status).length;
-
-    return {
-      status,
-      label: meta.label,
-      color: meta.color,
-      count,
-      pct: claims.length ? Math.round((count / claims.length) * 100) : 0,
-    };
-  });
+  const claimsByStatus = summarizeClaimsByStatus(claims);
 
   const userSummary = {
     total: users.length,
@@ -142,6 +153,87 @@ export const getDashboard = async (user: RequestUser) => {
       byStatus: claimsByStatus,
     },
     recentClaims: claims.slice(0, 5).map(toRecentClaim),
+  };
+};
+
+export const getDealerDashboardMetrics = async (user: RequestUser) => {
+  const { start, end, previousStart, label, previousLabel } = getMonthRange();
+  const contracts = await contractRepository.findMany({ dealer: user.id });
+  const claims = await claimRepository.findMany({ dealer: user.id });
+  const now = new Date();
+  const contractsByOrderId = new Map(
+    contracts.map((contract) => [contract.orderId, contract as Contract & { _id?: unknown }]),
+  );
+
+  const currentContracts = contracts.filter((contract) =>
+    isInRange(contract.createdAt, start, end),
+  );
+  const previousContracts = contracts.filter((contract) =>
+    isInRange(contract.createdAt, previousStart, start),
+  );
+  const currentClaims = claims.filter((claim) => isInRange(claim.createdAt, start, end));
+  const previousClaims = claims.filter((claim) => isInRange(claim.createdAt, previousStart, start));
+  const approvedClaims = claims.filter((claim) => claim.status === "approved");
+  const currentApprovedClaims = currentClaims.filter((claim) => claim.status === "approved");
+  const previousApprovedClaims = previousClaims.filter((claim) => claim.status === "approved");
+  const activeContracts = contracts.filter((contract) => contract.expiry > now);
+  const expiredContracts = contracts.filter((contract) => contract.expiry <= now);
+  const totalSales = contracts.reduce((sum, contract) => sum + contract.price, 0);
+
+  return {
+    period: {
+      label,
+      start: start.toISOString(),
+      end: end.toISOString(),
+      previousLabel,
+    },
+    stats: {
+      totalContracts: {
+        value: contracts.length,
+        trend: formatTrend(currentContracts.length, previousContracts.length, previousLabel),
+      },
+      activeContracts: {
+        value: activeContracts.length,
+        trend: `${expiredContracts.length} expired`,
+      },
+      totalSales: {
+        value: totalSales,
+        trend: `${contracts.length} contracts sold`,
+      },
+      claimsSubmitted: {
+        value: claims.length,
+        trend: formatTrend(currentClaims.length, previousClaims.length, previousLabel),
+      },
+      claimsApproved: {
+        value: approvedClaims.length,
+        trend: formatTrend(
+          currentApprovedClaims.length,
+          previousApprovedClaims.length,
+          previousLabel,
+        ),
+      },
+      users: {
+        total: 0,
+        admins: 0,
+        dealers: 0,
+        active: 0,
+        blocked: 0,
+      },
+    },
+    claimsOverview: {
+      total: claims.length,
+      byStatus: summarizeClaimsByStatus(claims),
+    },
+    recentClaims: claims.slice(0, 5).map(toRecentClaimWithContracts(contractsByOrderId)),
+    recentContracts: contracts.slice(0, 5).map((contract) => ({
+      id: contract._id ? String(contract._id) : "",
+      orderId: contract.orderId,
+      customer: contract.name,
+      coveredProduct: contract.coveredProduct,
+      price: contract.price,
+      expiry: contract.expiry,
+      createdAt: contract.createdAt,
+    })),
   };
 };
 

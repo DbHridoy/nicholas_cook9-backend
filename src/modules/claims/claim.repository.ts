@@ -4,7 +4,14 @@ import type { ClaimStatus } from "./claim.types.js";
 
 type CreateClaimPayload = Pick<
   ClaimEntity,
-  "claimId" | "dealer" | "name" | "email" | "orderId" | "flooringType" | "description"
+  | "claimId"
+  | "dealer"
+  | "name"
+  | "email"
+  | "orderId"
+  | "flooringType"
+  | "description"
+  | "attachments"
 >;
 
 export const claimRepository = {

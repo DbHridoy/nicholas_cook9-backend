@@ -97,3 +97,7 @@ export const uploadDocumentToS3 = async (file: Express.Multer.File): Promise<Upl
     url: buildPublicUrl(key),
   };
 };
+
+export const uploadDocumentsToS3 = async (
+  files: Express.Multer.File[],
+): Promise<UploadedDocument[]> => Promise.all(files.map(uploadDocumentToS3));

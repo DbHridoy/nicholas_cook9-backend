@@ -24,7 +24,9 @@ vi.mock("../src/modules/users/user.repository.js", () => ({
   userRepository: userRepositoryMocks,
 }));
 
-const { getDashboard } = await import("../src/modules/dashboard/dashboard.service.js");
+const { getDashboard, getDealerDashboardMetrics } = await import(
+  "../src/modules/dashboard/dashboard.service.js"
+);
 
 describe("dashboard service", () => {
   beforeEach(() => {
@@ -80,5 +82,72 @@ describe("dashboard service", () => {
     expect(userRepositoryMocks.findMany).not.toHaveBeenCalled();
     expect(dashboard.claimsOverview.total).toBe(0);
     expect(dashboard.stats.users.total).toBe(0);
+  });
+
+  it("returns dealer dashboard metrics scoped to the dealer", async () => {
+    contractRepositoryMocks.findMany.mockResolvedValue([
+      {
+        _id: "contract-1",
+        dealer: "dealer-id",
+        orderId: "ORDER-1",
+        name: "Customer One",
+        coveredProduct: "hardwood",
+        price: 250,
+        expiry: new Date("2027-05-31T00:00:00.000Z"),
+        createdAt: new Date("2026-05-10T00:00:00.000Z"),
+      },
+      {
+        _id: "contract-2",
+        dealer: "dealer-id",
+        orderId: "ORDER-2",
+        name: "Customer Two",
+        coveredProduct: "tile",
+        price: 100,
+        expiry: new Date("2026-04-30T00:00:00.000Z"),
+        createdAt: new Date("2026-04-10T00:00:00.000Z"),
+      },
+    ]);
+    claimRepositoryMocks.findMany.mockResolvedValue([
+      {
+        _id: "claim-1",
+        claimId: "CLM-123",
+        dealer: "dealer-id",
+        name: "Customer One",
+        email: "customer@example.com",
+        orderId: "ORDER-1",
+        flooringType: "Hardwood",
+        status: "approved",
+        createdAt: new Date("2026-05-14T00:00:00.000Z"),
+      },
+      {
+        _id: "claim-2",
+        claimId: "CLM-456",
+        dealer: "dealer-id",
+        name: "Customer Two",
+        email: "customer2@example.com",
+        orderId: "ORDER-2",
+        flooringType: "Tile",
+        status: "pending",
+        createdAt: new Date("2026-04-14T00:00:00.000Z"),
+      },
+    ]);
+
+    const dashboard = await getDealerDashboardMetrics({ id: "dealer-id", role: "dealer" });
+
+    expect(contractRepositoryMocks.findMany).toHaveBeenCalledWith({ dealer: "dealer-id" });
+    expect(claimRepositoryMocks.findMany).toHaveBeenCalledWith({ dealer: "dealer-id" });
+    expect(userRepositoryMocks.findMany).not.toHaveBeenCalled();
+    expect(dashboard.stats.totalContracts.value).toBe(2);
+    expect(dashboard.stats.activeContracts.value).toBe(1);
+    expect(dashboard.stats.totalSales.value).toBe(350);
+    expect(dashboard.stats.claimsSubmitted.value).toBe(2);
+    expect(dashboard.stats.claimsApproved.value).toBe(1);
+    expect(dashboard.claimsOverview.total).toBe(2);
+    expect(dashboard.recentClaims[0]).toMatchObject({
+      id: "CLM-123",
+      mongoId: "claim-1",
+      amount: 250,
+    });
+    expect(dashboard.recentContracts).toHaveLength(2);
   });
 });
