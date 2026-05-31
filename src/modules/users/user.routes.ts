@@ -24,7 +24,7 @@ userRouter.use(authenticate);
 userRouter.get("/me", getMyProfile);
 userRouter.patch("/me", validateBody(updateMyProfileSchema), updateMyProfile);
 
-userRouter.get("/", authorize("super_admin"), listUsers);
+userRouter.get("/", authorize("admin", "super_admin"), listUsers);
 userRouter.post("/", authorize("super_admin"), validateBody(createUserSchema), createUser);
 userRouter.post(
   "/dealers",

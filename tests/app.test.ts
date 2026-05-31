@@ -53,6 +53,19 @@ describe("app routes", () => {
     expect(response.body.success).toBe(false);
   });
 
+  it("validates public claim submission payloads", async () => {
+    const response = await request(app).post("/api/v1/claims").send({
+      name: "A",
+      email: "not-an-email",
+      orderId: "",
+      flooringType: "",
+      description: "short",
+    });
+
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
+  });
+
   it("requires authentication for user profile routes", async () => {
     const response = await request(app).get("/api/v1/users/me");
 

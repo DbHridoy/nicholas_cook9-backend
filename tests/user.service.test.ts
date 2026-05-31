@@ -1,16 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppError } from "../src/shared/errors/app-error.js";
-import { createDealerSchema } from "../src/modules/users/user.schemas.js";
+import { createDealerSchema, createUserSchema } from "../src/modules/users/user.schemas.js";
 
 const repositoryMocks = vi.hoisted(() => ({
   existsByEmail: vi.fn(),
   create: vi.fn(),
   findById: vi.fn(),
+  findMany: vi.fn(),
   deleteById: vi.fn(),
 }));
 
 const emailMocks = vi.hoisted(() => ({
   sendDealerWelcomePassword: vi.fn(),
+  sendUserWelcomePassword: vi.fn(),
 }));
 
 const passwordMocks = vi.hoisted(() => ({
@@ -25,7 +27,70 @@ vi.mock("../src/modules/users/dealer-email.service.js", () => emailMocks);
 
 vi.mock("../src/modules/users/password-generator.js", () => passwordMocks);
 
-const { createDealer } = await import("../src/modules/users/user.service.js");
+const { createDealer, createUser, listUsers } =
+  await import("../src/modules/users/user.service.js");
+
+describe("user service role-based creation", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    passwordMocks.createTemporaryPassword.mockReturnValue("TempPass123!");
+  });
+
+  it("creates an admin with a generated password and emails the password", async () => {
+    const createdUser = {
+      _id: "admin-id",
+      name: "Admin One",
+      email: "admin@example.com",
+      role: "admin",
+    };
+    const publicUser = {
+      _id: "admin-id",
+      name: "Admin One",
+      email: "admin@example.com",
+      role: "admin",
+      status: "active",
+      createdBy: "super-admin-id",
+    };
+
+    repositoryMocks.existsByEmail.mockResolvedValue(null);
+    repositoryMocks.create.mockResolvedValue(createdUser);
+    repositoryMocks.findById.mockResolvedValue(publicUser);
+    emailMocks.sendUserWelcomePassword.mockResolvedValue(undefined);
+
+    await expect(
+      createUser(
+        { name: "Admin One", email: "admin@example.com", role: "admin" },
+        "super-admin-id",
+      ),
+    ).resolves.toEqual(publicUser);
+
+    expect(repositoryMocks.create).toHaveBeenCalledWith({
+      name: "Admin One",
+      email: "admin@example.com",
+      role: "admin",
+      password: "TempPass123!",
+      createdBy: "super-admin-id",
+    });
+    expect(emailMocks.sendUserWelcomePassword).toHaveBeenCalledWith({
+      email: "admin@example.com",
+      name: "Admin One",
+      role: "admin",
+      temporaryPassword: "TempPass123!",
+    });
+    expect(repositoryMocks.deleteById).not.toHaveBeenCalled();
+  });
+
+  it("validates role-based user creation payloads", () => {
+    const result = createUserSchema.safeParse({
+      name: "Admin One",
+      email: "admin@example.com",
+      role: "admin",
+      password: "ShouldNotBeAccepted123",
+    });
+
+    expect(result.success).toBe(false);
+  });
+});
 
 describe("user service dealer creation", () => {
   beforeEach(() => {
@@ -109,5 +174,27 @@ describe("user service dealer creation", () => {
     });
 
     expect(result.success).toBe(false);
+  });
+});
+
+describe("user service listing", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("lists admins and dealers for super admins", async () => {
+    repositoryMocks.findMany.mockResolvedValue([]);
+
+    await listUsers("super_admin");
+
+    expect(repositoryMocks.findMany).toHaveBeenCalledWith({ role: { $ne: "super_admin" } });
+  });
+
+  it("lists dealers only for admins", async () => {
+    repositoryMocks.findMany.mockResolvedValue([]);
+
+    await listUsers("admin");
+
+    expect(repositoryMocks.findMany).toHaveBeenCalledWith({ role: "dealer" });
   });
 });
