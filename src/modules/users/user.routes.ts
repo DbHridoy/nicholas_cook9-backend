@@ -6,6 +6,7 @@ import {
   createDealer,
   createUser,
   getMyProfile,
+  getUserDetails,
   listUsers,
   updateMyProfile,
   updateUserStatus,
@@ -38,3 +39,4 @@ userRouter.patch(
   validateBody(updateUserStatusSchema),
   updateUserStatus,
 );
+userRouter.get("/:userId", authorize("admin", "super_admin"), getUserDetails);

@@ -9,6 +9,13 @@ import type { UserRole } from "./user.types.js";
 import { sendDealerWelcomePassword, sendUserWelcomePassword } from "./dealer-email.service.js";
 import { createTemporaryPassword } from "./password-generator.js";
 import { userRepository } from "./user.repository.js";
+import { contractRepository } from "../contracts/contract.repository.js";
+import { claimRepository } from "../claims/claim.repository.js";
+
+type RequestUser = {
+  id: string;
+  role: UserRole;
+};
 
 export const createUser = async (payload: CreateUserInput, creatorId: string) => {
   const existingUser = await userRepository.existsByEmail(payload.email);
@@ -82,6 +89,60 @@ export const getMyProfile = async (userId: string) => {
   }
 
   return user;
+};
+
+export const getUserDetails = async (userId: string, requester: RequestUser) => {
+  const user = await userRepository.findById(userId);
+
+  if (!user || user.role === "super_admin") {
+    throw new AppError(404, "User not found");
+  }
+
+  if (requester.role === "admin" && user.role !== "dealer") {
+    throw new AppError(404, "User not found");
+  }
+
+  const contracts =
+    user.role === "dealer" ? await contractRepository.findMany({ dealer: userId }) : [];
+  const orderIds = contracts.map((contract) => contract.orderId).filter(Boolean);
+  const claims = orderIds.length
+    ? await claimRepository.findMany({ orderId: { $in: orderIds } })
+    : [];
+  const monthlyPerformance = Array.from({ length: 6 }, (_, index) => {
+    const current = new Date();
+    const monthStart = new Date(
+      Date.UTC(current.getUTCFullYear(), current.getUTCMonth() - (5 - index), 1),
+    );
+    const nextMonthStart = new Date(
+      Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() + 1, 1),
+    );
+
+    return {
+      month: monthStart.toLocaleString("en-US", { month: "short", timeZone: "UTC" }),
+      contracts: contracts.filter(
+        (contract) =>
+          contract.createdAt &&
+          contract.createdAt >= monthStart &&
+          contract.createdAt < nextMonthStart,
+      ).length,
+      claims: claims.filter(
+        (claim) =>
+          claim.createdAt && claim.createdAt >= monthStart && claim.createdAt < nextMonthStart,
+      ).length,
+    };
+  });
+
+  return {
+    ...user.toObject(),
+    stats: {
+      totalContracts: contracts.length,
+      totalSales: contracts.reduce((sum, contract) => sum + contract.price, 0),
+      approvedClaims: claims.filter((claim) => claim.status === "approved").length,
+      pendingClaims: claims.filter((claim) => claim.status === "pending").length,
+      deniedClaims: claims.filter((claim) => claim.status === "denied").length,
+    },
+    performance: monthlyPerformance,
+  };
 };
 
 export const updateMyProfile = async (userId: string, payload: UpdateMyProfileInput) => {

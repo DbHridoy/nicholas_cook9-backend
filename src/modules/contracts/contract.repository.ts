@@ -3,7 +3,15 @@ import { Contract, type Contract as ContractEntity } from "./contract.model.js";
 
 type CreateContractPayload = Pick<
   ContractEntity,
-  "name" | "propertyAddress" | "installationDate" | "coveredProduct" | "term" | "price" | "file"
+  | "orderId"
+  | "name"
+  | "propertyAddress"
+  | "installationDate"
+  | "coveredProduct"
+  | "term"
+  | "expiry"
+  | "price"
+  | "file"
 > & {
   dealer: string | Types.ObjectId;
 };
@@ -15,6 +23,10 @@ export const contractRepository = {
 
   findById(id: string) {
     return Contract.findById(id);
+  },
+
+  findOne(filter: QueryFilter<ContractEntity>) {
+    return Contract.findOne(filter);
   },
 
   findMany(filter: QueryFilter<ContractEntity> = {}) {

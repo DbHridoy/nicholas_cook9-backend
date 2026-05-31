@@ -38,6 +38,16 @@ export const getMyProfile: RequestHandler = asyncHandler(async (req, res) => {
   });
 });
 
+export const getUserDetails: RequestHandler = asyncHandler(async (req, res) => {
+  const user = await userService.getUserDetails(String(req.params.userId), req.user!);
+
+  res.status(200).json({
+    success: true,
+    message: "User retrieved successfully",
+    data: { user },
+  });
+});
+
 export const updateMyProfile: RequestHandler = asyncHandler(async (req, res) => {
   const user = await userService.updateMyProfile(req.user!.id, req.body as UpdateMyProfileInput);
 

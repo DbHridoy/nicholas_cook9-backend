@@ -3,6 +3,8 @@ import type { Router as ExpressRouter } from "express";
 import { authRouter } from "../modules/auth/auth.routes.js";
 import { claimRouter } from "../modules/claims/claim.routes.js";
 import { contractRouter } from "../modules/contracts/contract.routes.js";
+import { dashboardRouter } from "../modules/dashboard/dashboard.routes.js";
+import { dailyStatRouter } from "../modules/daily-stats/daily-stat.routes.js";
 import { healthRouter } from "../modules/health/health.routes.js";
 import { userRouter } from "../modules/users/user.routes.js";
 
@@ -22,4 +24,6 @@ apiRouter.use("/health", healthRouter);
 apiRouter.use("/auth", authRouter);
 apiRouter.use("/claims", claimRouter);
 apiRouter.use("/contracts", contractRouter);
+apiRouter.use("/dashboard", dashboardRouter);
+apiRouter.use("/daily-stats", dailyStatRouter);
 apiRouter.use("/users", userRouter);

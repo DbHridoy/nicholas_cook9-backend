@@ -8,11 +8,13 @@ import {
 
 export type Contract = {
   dealer: Types.ObjectId;
+  orderId: string;
   name: string;
   propertyAddress: string;
   installationDate: Date;
   coveredProduct: CoveredProduct;
   term: ContractTerm;
+  expiry: Date;
   price: number;
   file: string;
   createdAt?: Date;
@@ -25,6 +27,13 @@ const contractSchema = new Schema<Contract>(
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      index: true,
+    },
+    orderId: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 120,
       index: true,
     },
     name: {
@@ -52,6 +61,11 @@ const contractSchema = new Schema<Contract>(
     term: {
       type: String,
       enum: contractTerms,
+      required: true,
+      index: true,
+    },
+    expiry: {
+      type: Date,
       required: true,
       index: true,
     },

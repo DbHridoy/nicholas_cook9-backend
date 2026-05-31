@@ -13,8 +13,8 @@ export const createClaim: RequestHandler = asyncHandler(async (req, res) => {
   });
 });
 
-export const listClaims: RequestHandler = asyncHandler(async (_req, res) => {
-  const claims = await claimService.listClaims();
+export const listClaims: RequestHandler = asyncHandler(async (req, res) => {
+  const claims = await claimService.listClaims(req.user!);
 
   res.status(200).json({
     success: true,
@@ -24,7 +24,7 @@ export const listClaims: RequestHandler = asyncHandler(async (_req, res) => {
 });
 
 export const getClaim: RequestHandler = asyncHandler(async (req, res) => {
-  const claim = await claimService.getClaim(String(req.params.claimId));
+  const claim = await claimService.getClaim(String(req.params.claimId), req.user!);
 
   res.status(200).json({
     success: true,
