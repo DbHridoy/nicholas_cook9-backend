@@ -22,14 +22,26 @@ export const notificationRepository = {
     return Notification.find(filter).sort({ createdAt: -1 });
   },
 
-  markAsRead(id: string, readAt = new Date()) {
-    return Notification.findByIdAndUpdate(
-      id,
+  countUnread(recipient: string | Types.ObjectId) {
+    return Notification.countDocuments({ recipient, readAt: { $exists: false } });
+  },
+
+  markAsRead(id: string, recipient: string | Types.ObjectId, readAt = new Date()) {
+    return Notification.findOneAndUpdate(
+      { _id: id, recipient },
       { readAt },
       {
         new: true,
         runValidators: true,
       },
+    );
+  },
+
+  markAllAsRead(recipient: string | Types.ObjectId, readAt = new Date()) {
+    return Notification.updateMany(
+      { recipient, readAt: { $exists: false } },
+      { readAt },
+      { runValidators: true },
     );
   },
 };

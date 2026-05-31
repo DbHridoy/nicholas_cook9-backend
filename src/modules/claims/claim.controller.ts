@@ -1,10 +1,15 @@
 import type { RequestHandler } from "express";
 import { asyncHandler } from "../../shared/utils/async-handler.js";
+import { uploadDocumentsToS3 } from "../../shared/services/s3-document.service.js";
 import type { CreateClaimInput, UpdateClaimStatusInput } from "./claim.schemas.js";
 import * as claimService from "./claim.service.js";
 
 export const createClaim: RequestHandler = asyncHandler(async (req, res) => {
-  const claim = await claimService.createClaim(req.body as CreateClaimInput);
+  const files = Array.isArray(req.files)
+    ? req.files
+    : Object.values(req.files ?? {}).flat();
+  const attachments = files.length ? (await uploadDocumentsToS3(files)).map(({ url }) => url) : [];
+  const claim = await claimService.createClaim(req.body as CreateClaimInput, attachments);
 
   res.status(201).json({
     success: true,

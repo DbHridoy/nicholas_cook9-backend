@@ -6,6 +6,7 @@ import { contractRouter } from "../modules/contracts/contract.routes.js";
 import { dashboardRouter } from "../modules/dashboard/dashboard.routes.js";
 import { dailyStatRouter } from "../modules/daily-stats/daily-stat.routes.js";
 import { healthRouter } from "../modules/health/health.routes.js";
+import { notificationRouter } from "../modules/notifications/notification.routes.js";
 import { userRouter } from "../modules/users/user.routes.js";
 
 export const apiRouter: ExpressRouter = Router();
@@ -26,4 +27,5 @@ apiRouter.use("/claims", claimRouter);
 apiRouter.use("/contracts", contractRouter);
 apiRouter.use("/dashboard", dashboardRouter);
 apiRouter.use("/daily-stats", dailyStatRouter);
+apiRouter.use("/notifications", notificationRouter);
 apiRouter.use("/users", userRouter);
