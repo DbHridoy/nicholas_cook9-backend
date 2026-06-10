@@ -71,4 +71,11 @@ describe("app routes", () => {
     expect(response.status).toBe(401);
     expect(response.body.success).toBe(false);
   });
+
+  it("requires authentication for daily sales routes", async () => {
+    const response = await request(app).get("/api/v1/daily-sales");
+
+    expect(response.status).toBe(401);
+    expect(response.body.success).toBe(false);
+  });
 });
