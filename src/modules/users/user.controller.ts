@@ -90,3 +90,12 @@ export const updateUserStatus: RequestHandler = asyncHandler(async (req, res) =>
     data: { user },
   });
 });
+
+export const deleteUser: RequestHandler = asyncHandler(async (req, res) => {
+  await userService.deleteUser(String(req.params.userId), req.user!);
+
+  res.status(200).json({
+    success: true,
+    message: "User deleted successfully",
+  });
+});

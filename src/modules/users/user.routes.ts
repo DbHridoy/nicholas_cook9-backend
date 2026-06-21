@@ -5,6 +5,7 @@ import { validateBody } from "../../shared/middlewares/validate.middleware.js";
 import {
   createDealer,
   createUser,
+  deleteUser,
   getMyProfile,
   getUserDetails,
   listUsers,
@@ -43,3 +44,4 @@ userRouter.patch(
   updateUserStatus,
 );
 userRouter.get("/:userId", authorize("admin", "super_admin"), getUserDetails);
+userRouter.delete("/:userId", authorize("admin", "super_admin"), deleteUser);

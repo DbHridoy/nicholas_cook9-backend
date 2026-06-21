@@ -176,6 +176,20 @@ export const updateUserStatus = async (userId: string, payload: UpdateUserStatus
   return userRepository.updateStatus(userId, payload.status);
 };
 
+export const deleteUser = async (userId: string, requester: RequestUser) => {
+  const user = await userRepository.findById(userId);
+
+  if (!user) {
+    throw new AppError(404, "User not found");
+  }
+
+  if (requester.role === "admin" && user.role !== "dealer") {
+    throw new AppError(404, "User not found");
+  }
+
+  await userRepository.deleteById(userId);
+};
+
 export const changeMyPassword = async (userId: string, payload: ChangePasswordInput) => {
   const user = await userRepository.findByIdWithPassword(userId);
 

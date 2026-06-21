@@ -48,7 +48,7 @@ vi.mock("../src/modules/users/dealer-email.service.js", () => emailMocks);
 
 vi.mock("../src/modules/users/password-generator.js", () => passwordMocks);
 
-const { changeMyPassword, createDealer, createUser, getUserDetails, listUsers } =
+const { changeMyPassword, createDealer, createUser, deleteUser, getUserDetails, listUsers } =
   await import("../src/modules/users/user.service.js");
 
 describe("user service role-based creation", () => {
@@ -247,6 +247,65 @@ describe("user service dealer details", () => {
         claims: 0,
       }),
     );
+  });
+});
+
+describe("user service deletion", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("allows admins to delete dealers", async () => {
+    repositoryMocks.findById.mockResolvedValue({
+      _id: "dealer-id",
+      role: "dealer",
+    });
+    repositoryMocks.deleteById.mockResolvedValue({ _id: "dealer-id" });
+
+    await expect(
+      deleteUser("dealer-id", {
+        id: "admin-id",
+        role: "admin",
+      }),
+    ).resolves.toBeUndefined();
+
+    expect(repositoryMocks.deleteById).toHaveBeenCalledWith("dealer-id");
+  });
+
+  it("rejects admin deletion of non-dealers", async () => {
+    repositoryMocks.findById.mockResolvedValue({
+      _id: "admin-2",
+      role: "admin",
+    });
+
+    await expect(
+      deleteUser("admin-2", {
+        id: "admin-id",
+        role: "admin",
+      }),
+    ).rejects.toMatchObject({
+      statusCode: 404,
+      message: "User not found",
+    });
+
+    expect(repositoryMocks.deleteById).not.toHaveBeenCalled();
+  });
+
+  it("allows super admins to delete admins", async () => {
+    repositoryMocks.findById.mockResolvedValue({
+      _id: "admin-id",
+      role: "admin",
+    });
+    repositoryMocks.deleteById.mockResolvedValue({ _id: "admin-id" });
+
+    await expect(
+      deleteUser("admin-id", {
+        id: "super-admin-id",
+        role: "super_admin",
+      }),
+    ).resolves.toBeUndefined();
+
+    expect(repositoryMocks.deleteById).toHaveBeenCalledWith("admin-id");
   });
 });
 
