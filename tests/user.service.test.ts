@@ -15,6 +15,14 @@ const repositoryMocks = vi.hoisted(() => ({
   deleteById: vi.fn(),
 }));
 
+const contractRepositoryMocks = vi.hoisted(() => ({
+  findMany: vi.fn(),
+}));
+
+const claimRepositoryMocks = vi.hoisted(() => ({
+  findMany: vi.fn(),
+}));
+
 const emailMocks = vi.hoisted(() => ({
   sendDealerWelcomePassword: vi.fn(),
   sendUserWelcomePassword: vi.fn(),
@@ -28,11 +36,19 @@ vi.mock("../src/modules/users/user.repository.js", () => ({
   userRepository: repositoryMocks,
 }));
 
+vi.mock("../src/modules/contracts/contract.repository.js", () => ({
+  contractRepository: contractRepositoryMocks,
+}));
+
+vi.mock("../src/modules/claims/claim.repository.js", () => ({
+  claimRepository: claimRepositoryMocks,
+}));
+
 vi.mock("../src/modules/users/dealer-email.service.js", () => emailMocks);
 
 vi.mock("../src/modules/users/password-generator.js", () => passwordMocks);
 
-const { changeMyPassword, createDealer, createUser, listUsers } =
+const { changeMyPassword, createDealer, createUser, getUserDetails, listUsers } =
   await import("../src/modules/users/user.service.js");
 
 describe("user service role-based creation", () => {
@@ -201,6 +217,36 @@ describe("user service listing", () => {
     await listUsers("admin");
 
     expect(repositoryMocks.findMany).toHaveBeenCalledWith({ role: "dealer" });
+  });
+});
+
+describe("user service dealer details", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns 12 months of performance data for dealers", async () => {
+    repositoryMocks.findById.mockResolvedValue({
+      _id: "dealer-id",
+      role: "dealer",
+      toObject: () => ({ _id: "dealer-id", role: "dealer", name: "Dealer One" }),
+    });
+    contractRepositoryMocks.findMany.mockResolvedValue([]);
+    claimRepositoryMocks.findMany.mockResolvedValue([]);
+
+    const result = await getUserDetails("dealer-id", {
+      id: "admin-id",
+      role: "admin",
+    });
+
+    expect(result.performance).toHaveLength(12);
+    expect(result.performance.at(-1)).toEqual(
+      expect.objectContaining({
+        month: expect.any(String),
+        contracts: 0,
+        claims: 0,
+      }),
+    );
   });
 });
 

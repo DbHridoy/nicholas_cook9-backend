@@ -109,11 +109,9 @@ export const getUserDetails = async (userId: string, requester: RequestUser) => 
   const claims = orderIds.length
     ? await claimRepository.findMany({ orderId: { $in: orderIds } })
     : [];
-  const monthlyPerformance = Array.from({ length: 6 }, (_, index) => {
+  const monthlyPerformance = Array.from({ length: 12 }, (_, index) => {
     const current = new Date();
-    const monthStart = new Date(
-      Date.UTC(current.getUTCFullYear(), current.getUTCMonth() - (5 - index), 1),
-    );
+    const monthStart = new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth() - (11 - index), 1));
     const nextMonthStart = new Date(
       Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() + 1, 1),
     );
