@@ -3,6 +3,7 @@ import { createContractSchema } from "../src/modules/contracts/contract.schemas.
 
 const repositoryMocks = vi.hoisted(() => ({
   create: vi.fn(),
+  deleteById: vi.fn(),
   findMany: vi.fn(),
   findById: vi.fn(),
 }));
@@ -11,7 +12,7 @@ vi.mock("../src/modules/contracts/contract.repository.js", () => ({
   contractRepository: repositoryMocks,
 }));
 
-const { createContract, getContract, listContracts } =
+const { createContract, deleteContract, getContract, listContracts } =
   await import("../src/modules/contracts/contract.service.js");
 
 describe("contract service", () => {
@@ -51,6 +52,37 @@ describe("contract service", () => {
 
     await expect(
       getContract("missing-id", { id: "dealer-id", role: "dealer" }),
+    ).rejects.toMatchObject({
+      statusCode: 404,
+      message: "Contract not found",
+    });
+  });
+
+  it("deletes a contract for the owning dealer", async () => {
+    repositoryMocks.findById.mockResolvedValue({
+      _id: "contract-id",
+      dealer: {
+        toString: () => "dealer-id",
+      },
+    });
+    repositoryMocks.deleteById.mockResolvedValue({ _id: "contract-id" });
+
+    await expect(
+      deleteContract("contract-id", { id: "dealer-id", role: "dealer" }),
+    ).resolves.toBeUndefined();
+    expect(repositoryMocks.deleteById).toHaveBeenCalledWith("contract-id");
+  });
+
+  it("rejects deleting another dealer's contract", async () => {
+    repositoryMocks.findById.mockResolvedValue({
+      _id: "contract-id",
+      dealer: {
+        toString: () => "other-dealer-id",
+      },
+    });
+
+    await expect(
+      deleteContract("contract-id", { id: "dealer-id", role: "dealer" }),
     ).rejects.toMatchObject({
       statusCode: 404,
       message: "Contract not found",

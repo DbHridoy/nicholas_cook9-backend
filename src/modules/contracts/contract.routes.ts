@@ -3,7 +3,12 @@ import type { Router as ExpressRouter } from "express";
 import { authenticate, authorize } from "../auth/auth.middleware.js";
 import { uploadDocument } from "../../shared/middlewares/document-upload.middleware.js";
 import { validateBody } from "../../shared/middlewares/validate.middleware.js";
-import { createContract, getContract, listContracts } from "./contract.controller.js";
+import {
+  createContract,
+  deleteContract,
+  getContract,
+  listContracts,
+} from "./contract.controller.js";
 import { createContractSchema } from "./contract.schemas.js";
 
 export const contractRouter: ExpressRouter = Router();
@@ -19,3 +24,4 @@ contractRouter.post(
   createContract,
 );
 contractRouter.get("/:contractId", authorize("dealer", "admin", "super_admin"), getContract);
+contractRouter.delete("/:contractId", authorize("dealer", "admin", "super_admin"), deleteContract);

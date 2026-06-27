@@ -43,3 +43,17 @@ export const getContract = async (contractId: string, user: RequestUser) => {
 
   return contract;
 };
+
+export const deleteContract = async (contractId: string, user: RequestUser) => {
+  const contract = await contractRepository.findById(contractId);
+
+  if (!contract) {
+    throw new AppError(404, "Contract not found");
+  }
+
+  if (user.role === "dealer" && contract.dealer.toString() !== user.id) {
+    throw new AppError(404, "Contract not found");
+  }
+
+  await contractRepository.deleteById(contractId);
+};

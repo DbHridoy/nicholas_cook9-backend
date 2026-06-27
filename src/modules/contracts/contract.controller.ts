@@ -48,3 +48,12 @@ export const getContract: RequestHandler = asyncHandler(async (req, res) => {
     data: { contract },
   });
 });
+
+export const deleteContract: RequestHandler = asyncHandler(async (req, res) => {
+  await contractService.deleteContract(String(req.params.contractId), req.user!);
+
+  res.status(200).json({
+    success: true,
+    message: "Contract deleted successfully",
+  });
+});

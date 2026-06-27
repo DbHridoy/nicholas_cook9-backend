@@ -21,6 +21,10 @@ export const contractRepository = {
     return Contract.create(payload);
   },
 
+  deleteById(id: string) {
+    return Contract.findByIdAndDelete(id);
+  },
+
   findById(id: string) {
     return Contract.findById(id);
   },
