@@ -11,7 +11,7 @@ export type Contract = {
   orderId: string;
   name: string;
   propertyAddress: string;
-  installationDate: Date;
+  saleDate: Date;
   coveredProduct: CoveredProduct;
   term: ContractTerm;
   expiry: Date;
@@ -48,7 +48,7 @@ const contractSchema = new Schema<Contract>(
       trim: true,
       maxlength: 250,
     },
-    installationDate: {
+    saleDate: {
       type: Date,
       required: true,
     },

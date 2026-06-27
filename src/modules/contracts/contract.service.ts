@@ -13,8 +13,8 @@ type CreateContractPayload = CreateContractInput & {
   file: string;
 };
 
-const calculateExpiry = (installationDate: Date, term: CreateContractInput["term"]) => {
-  const expiry = new Date(installationDate);
+const calculateExpiry = (saleDate: Date, term: CreateContractInput["term"]) => {
+  const expiry = new Date(saleDate);
   expiry.setUTCFullYear(expiry.getUTCFullYear() + contractTermYears[term]);
 
   return expiry;
@@ -24,7 +24,7 @@ export const createContract = (payload: CreateContractPayload, dealerId: string)
   contractRepository.create({
     ...payload,
     dealer: dealerId,
-    expiry: calculateExpiry(payload.installationDate, payload.term),
+    expiry: calculateExpiry(payload.saleDate, payload.term),
   });
 
 export const listContracts = (user: RequestUser) =>

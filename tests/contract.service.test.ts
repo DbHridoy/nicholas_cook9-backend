@@ -24,9 +24,9 @@ describe("contract service", () => {
       orderId: "ORDER-1001",
       name: "Customer One",
       propertyAddress: "123 Main Street",
-      installationDate: new Date("2026-05-30T00:00:00.000Z"),
+      saleDate: new Date("2026-05-30T00:00:00.000Z"),
       coveredProduct: "lvp_laminate" as const,
-      term: "5_year_coverage" as const,
+      term: "Preload 2 year" as const,
       price: 499.99,
       file: "contracts/customer-one.pdf",
     };
@@ -42,7 +42,7 @@ describe("contract service", () => {
     expect(repositoryMocks.create).toHaveBeenCalledWith({
       ...payload,
       dealer: "dealer-id",
-      expiry: new Date("2031-05-30T00:00:00.000Z"),
+      expiry: new Date("2028-05-30T00:00:00.000Z"),
     });
   });
 
@@ -72,9 +72,9 @@ describe("contract service", () => {
       orderId: "ORDER-1001",
       name: "Customer One",
       propertyAddress: "123 Main Street",
-      installationDate: "2026-05-30",
+      saleDate: "2026-05-30",
       coveredProduct: "carpet",
-      term: "3_year_coverage",
+      term: "Preload 1 year",
       price: 299.99,
       file: "contracts/customer-one.pdf",
     });
@@ -83,7 +83,7 @@ describe("contract service", () => {
       orderId: "",
       name: "Customer One",
       propertyAddress: "123 Main Street",
-      installationDate: "2026-05-30",
+      saleDate: "2026-05-30",
       coveredProduct: "vinyl",
       term: "10_year_coverage",
       price: -1,

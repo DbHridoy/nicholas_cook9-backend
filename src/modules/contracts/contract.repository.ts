@@ -6,7 +6,7 @@ type CreateContractPayload = Pick<
   | "orderId"
   | "name"
   | "propertyAddress"
-  | "installationDate"
+  | "saleDate"
   | "coveredProduct"
   | "term"
   | "expiry"

@@ -6,7 +6,7 @@ export const createContractSchema = z
     orderId: z.string().trim().min(1).max(120),
     name: z.string().trim().min(2).max(80),
     propertyAddress: z.string().trim().min(5).max(250),
-    installationDate: z.coerce.date(),
+    saleDate: z.coerce.date(),
     coveredProduct: z.enum(coveredProducts),
     term: z.enum(contractTerms),
     price: z.coerce.number().nonnegative(),
