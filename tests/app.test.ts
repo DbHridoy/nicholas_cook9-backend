@@ -85,4 +85,13 @@ describe("app routes", () => {
     expect(response.status).toBe(401);
     expect(response.body.success).toBe(false);
   });
+
+  it("requires authentication for claim status update routes", async () => {
+    const response = await request(app).patch("/api/v1/claims/claim-id/status").send({
+      status: "approved",
+    });
+
+    expect(response.status).toBe(401);
+    expect(response.body.success).toBe(false);
+  });
 });

@@ -24,7 +24,7 @@ claimRouter.get("/", authorize("dealer", "admin", "super_admin"), listClaims);
 claimRouter.get("/:claimId", authorize("dealer", "admin", "super_admin"), getClaim);
 claimRouter.patch(
   "/:claimId/status",
-  authorize("admin", "super_admin"),
+  authorize("dealer", "admin", "super_admin"),
   validateBody(updateClaimStatusSchema),
   updateClaimStatus,
 );

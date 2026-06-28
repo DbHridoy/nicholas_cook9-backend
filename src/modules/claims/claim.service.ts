@@ -107,7 +107,19 @@ export const getClaim = async (claimId: string, user: RequestUser) => {
   return claim;
 };
 
-export const updateClaimStatus = async (claimId: string, payload: UpdateClaimStatusInput) => {
+export const updateClaimStatus = async (
+  claimId: string,
+  payload: UpdateClaimStatusInput,
+  user: RequestUser,
+) => {
+  if (user.role === "dealer") {
+    const existingClaim = await findClaimByIdentifier(claimId);
+
+    if (!existingClaim || existingClaim.dealer.toString() !== user.id) {
+      throw new AppError(404, "Claim not found");
+    }
+  }
+
   const claim = await updateClaimStatusByIdentifier(claimId, payload.status);
 
   if (!claim) {

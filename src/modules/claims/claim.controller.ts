@@ -42,6 +42,7 @@ export const updateClaimStatus: RequestHandler = asyncHandler(async (req, res) =
   const claim = await claimService.updateClaimStatus(
     String(req.params.claimId),
     req.body as UpdateClaimStatusInput,
+    req.user!,
   );
 
   res.status(200).json({

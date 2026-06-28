@@ -141,7 +141,13 @@ describe("claim service", () => {
       status: "approved",
     });
 
-    await expect(updateClaimStatus("CLM-ABCDEF123456", { status: "approved" })).resolves.toMatchObject({
+    await expect(
+      updateClaimStatus(
+        "CLM-ABCDEF123456",
+        { status: "approved" },
+        { id: "admin-id", role: "admin" },
+      ),
+    ).resolves.toMatchObject({
       status: "approved",
     });
 
@@ -186,7 +192,11 @@ describe("claim service", () => {
     });
 
     await expect(
-      updateClaimStatus("6a1ca7830ac3eb315a4201ec", { status: "denied" }),
+      updateClaimStatus(
+        "6a1ca7830ac3eb315a4201ec",
+        { status: "denied" },
+        { id: "super-admin-id", role: "super_admin" },
+      ),
     ).resolves.toMatchObject({
       status: "denied",
     });
@@ -199,6 +209,54 @@ describe("claim service", () => {
       "6a1ca7830ac3eb315a4201ec",
       "denied",
     );
+  });
+
+  it("allows dealers to update their own claims", async () => {
+    repositoryMocks.findByClaimId.mockResolvedValueOnce({
+      _id: "claim-id",
+      claimId: "CLM-ABCDEF123456",
+      dealer: { toString: () => "dealer-id" },
+      status: "pending",
+    });
+    repositoryMocks.updateStatusByClaimId.mockResolvedValueOnce({
+      _id: "claim-id",
+      claimId: "CLM-ABCDEF123456",
+      dealer: { toString: () => "dealer-id" },
+      status: "approved",
+    });
+
+    await expect(
+      updateClaimStatus(
+        "CLM-ABCDEF123456",
+        { status: "approved" },
+        { id: "dealer-id", role: "dealer" },
+      ),
+    ).resolves.toMatchObject({
+      status: "approved",
+    });
+  });
+
+  it("rejects dealers updating other dealers' claims", async () => {
+    repositoryMocks.findByClaimId.mockResolvedValueOnce({
+      _id: "claim-id",
+      claimId: "CLM-ABCDEF123456",
+      dealer: { toString: () => "other-dealer-id" },
+      status: "pending",
+    });
+
+    await expect(
+      updateClaimStatus(
+        "CLM-ABCDEF123456",
+        { status: "denied" },
+        { id: "dealer-id", role: "dealer" },
+      ),
+    ).rejects.toMatchObject({
+      statusCode: 404,
+      message: "Claim not found",
+    });
+
+    expect(repositoryMocks.updateStatusByClaimId).not.toHaveBeenCalled();
+    expect(repositoryMocks.updateStatusById).not.toHaveBeenCalled();
   });
 
   it("validates claim creation payloads", () => {
