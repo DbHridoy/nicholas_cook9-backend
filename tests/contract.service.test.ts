@@ -47,6 +47,32 @@ describe("contract service", () => {
     });
   });
 
+  it("creates a contract without an attachment", async () => {
+    const payload = {
+      orderId: "ORDER-1002",
+      name: "Customer Two",
+      propertyAddress: "456 Main Street",
+      saleDate: new Date("2026-06-10T00:00:00.000Z"),
+      coveredProduct: "carpet" as const,
+      term: "WFO" as const,
+      price: 199.99,
+    };
+    const createdContract = {
+      _id: "contract-id-2",
+      ...payload,
+      dealer: "dealer-id",
+    };
+
+    repositoryMocks.create.mockResolvedValue(createdContract);
+
+    await expect(createContract(payload, "dealer-id")).resolves.toEqual(createdContract);
+    expect(repositoryMocks.create).toHaveBeenCalledWith({
+      ...payload,
+      dealer: "dealer-id",
+      expiry: new Date("2026-06-10T00:00:00.000Z"),
+    });
+  });
+
   it("returns a not found error when a contract does not exist", async () => {
     repositoryMocks.findById.mockResolvedValue(null);
 
@@ -111,6 +137,16 @@ describe("contract service", () => {
       file: "contracts/customer-one.pdf",
     });
 
+    const validWithoutFileResult = createContractSchema.safeParse({
+      orderId: "ORDER-1002",
+      name: "Customer Two",
+      propertyAddress: "456 Main Street",
+      saleDate: "2026-06-10",
+      coveredProduct: "carpet",
+      term: "WFO",
+      price: 199.99,
+    });
+
     const invalidResult = createContractSchema.safeParse({
       orderId: "",
       name: "Customer One",
@@ -123,6 +159,7 @@ describe("contract service", () => {
     });
 
     expect(validResult.success).toBe(true);
+    expect(validWithoutFileResult.success).toBe(true);
     expect(invalidResult.success).toBe(false);
   });
 });

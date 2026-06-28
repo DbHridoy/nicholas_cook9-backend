@@ -9,9 +9,7 @@ type RequestUser = {
   role: UserRole;
 };
 
-type CreateContractPayload = CreateContractInput & {
-  file: string;
-};
+type CreateContractPayload = CreateContractInput;
 
 const calculateExpiry = (saleDate: Date, term: CreateContractInput["term"]) => {
   const expiry = new Date(saleDate);

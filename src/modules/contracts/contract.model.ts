@@ -16,7 +16,7 @@ export type Contract = {
   term: ContractTerm;
   expiry: Date;
   price: number;
-  file: string;
+  file?: string;
   createdAt?: Date;
   updatedAt?: Date;
 };
@@ -76,7 +76,6 @@ const contractSchema = new Schema<Contract>(
     },
     file: {
       type: String,
-      required: true,
       trim: true,
       maxlength: 2048,
     },
