@@ -1,6 +1,7 @@
 import { Router } from "express";
 import type { Router as ExpressRouter } from "express";
 import { authRouter } from "../modules/auth/auth.routes.js";
+import { cancellationRouter } from "../modules/cancellations/cancellation.routes.js";
 import { claimRouter } from "../modules/claims/claim.routes.js";
 import { contractRouter } from "../modules/contracts/contract.routes.js";
 import { dailySaleRouter } from "../modules/daily-sales/daily-sale.routes.js";
@@ -24,6 +25,7 @@ apiRouter.get("/", (_req, res) => {
 
 apiRouter.use("/health", healthRouter);
 apiRouter.use("/auth", authRouter);
+apiRouter.use("/cancellations", cancellationRouter);
 apiRouter.use("/claims", claimRouter);
 apiRouter.use("/contracts", contractRouter);
 apiRouter.use("/daily-sales", dailySaleRouter);
