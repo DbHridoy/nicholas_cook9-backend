@@ -10,6 +10,7 @@ type CreateCancellationPayload = Pick<
   | "refundAmount"
   | "status"
 > & {
+  contract: string | Types.ObjectId;
   dealer: string | Types.ObjectId;
 };
 

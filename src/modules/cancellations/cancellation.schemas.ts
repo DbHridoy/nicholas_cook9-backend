@@ -2,6 +2,10 @@ import { z } from "zod";
 
 export const createCancellationSchema = z
   .object({
+    contractId: z
+      .string()
+      .trim()
+      .regex(/^[a-f\d]{24}$/i, "A valid contract must be selected"),
     customerName: z.string().trim().min(1, "Customer name is required"),
     originalPurchasePrice: z.number().nonnegative("Original purchase price must be 0 or more"),
     remainingCoverageMonths: z

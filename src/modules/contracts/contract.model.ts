@@ -1,8 +1,10 @@
 import { model, Schema, type HydratedDocument, type Types } from "mongoose";
 import {
   contractTerms,
+  contractStatuses,
   coveredProducts,
   type ContractTerm,
+  type ContractStatus,
   type CoveredProduct,
 } from "./contract.types.js";
 
@@ -14,6 +16,7 @@ export type Contract = {
   saleDate: Date;
   coveredProduct: CoveredProduct;
   term: ContractTerm;
+  status: ContractStatus;
   expiry: Date;
   price: number;
   file?: string;
@@ -62,6 +65,12 @@ const contractSchema = new Schema<Contract>(
       type: String,
       enum: contractTerms,
       required: true,
+      index: true,
+    },
+    status: {
+      type: String,
+      enum: contractStatuses,
+      default: "active",
       index: true,
     },
     expiry: {

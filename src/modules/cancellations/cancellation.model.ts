@@ -2,6 +2,7 @@ import { model, Schema, type HydratedDocument, type Types } from "mongoose";
 import { cancellationStatuses, type CancellationStatus } from "./cancellation.types.js";
 
 export type Cancellation = {
+  contract: Types.ObjectId;
   dealer: Types.ObjectId;
   customerName: string;
   originalPurchasePrice: number;
@@ -16,6 +17,12 @@ export type Cancellation = {
 
 const cancellationSchema = new Schema<Cancellation>(
   {
+    contract: {
+      type: Schema.Types.ObjectId,
+      ref: "Contract",
+      required: true,
+      index: true,
+    },
     dealer: {
       type: Schema.Types.ObjectId,
       ref: "User",

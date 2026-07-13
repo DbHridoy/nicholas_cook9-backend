@@ -8,8 +8,17 @@ const cancellationRepositoryMocks = vi.hoisted(() => ({
   processByIdAndDealer: vi.fn(),
 }));
 
+const contractRepositoryMocks = vi.hoisted(() => ({
+  findById: vi.fn(),
+  updateStatusByIdAndDealer: vi.fn(),
+}));
+
 vi.mock("../src/modules/cancellations/cancellation.repository.js", () => ({
   cancellationRepository: cancellationRepositoryMocks,
+}));
+
+vi.mock("../src/modules/contracts/contract.repository.js", () => ({
+  contractRepository: contractRepositoryMocks,
 }));
 
 const {
@@ -35,9 +44,14 @@ describe("cancellation service", () => {
   });
 
   it("creates a dealer cancellation quote with a calculated refund amount", async () => {
+    contractRepositoryMocks.findById.mockResolvedValue({
+      _id: "507f1f77bcf86cd799439011",
+      dealer: { toString: () => "dealer-id" },
+    });
     cancellationRepositoryMocks.create.mockResolvedValue({ _id: "cancellation-id" });
 
     await createMyCancellation("dealer-id", {
+      contractId: "507f1f77bcf86cd799439011",
       customerName: "Customer One",
       originalPurchasePrice: 699,
       remainingCoverageMonths: 26,
@@ -45,6 +59,7 @@ describe("cancellation service", () => {
     });
 
     expect(cancellationRepositoryMocks.create).toHaveBeenCalledWith({
+      contract: "507f1f77bcf86cd799439011",
       customerName: "Customer One",
       dealer: "dealer-id",
       originalPurchasePrice: 699,
@@ -66,8 +81,13 @@ describe("cancellation service", () => {
   it("processes a draft cancellation for the dealer", async () => {
     cancellationRepositoryMocks.findById.mockResolvedValue({
       _id: "cancellation-id",
+      contract: { toString: () => "contract-id" },
       dealer: { toString: () => "dealer-id" },
       status: "draft",
+    });
+    contractRepositoryMocks.updateStatusByIdAndDealer.mockResolvedValue({
+      _id: "contract-id",
+      status: "cancelled",
     });
     cancellationRepositoryMocks.processByIdAndDealer.mockResolvedValue({
       _id: "cancellation-id",
@@ -83,11 +103,17 @@ describe("cancellation service", () => {
       "507f1f77bcf86cd799439011",
       "dealer-id",
     );
+    expect(contractRepositoryMocks.updateStatusByIdAndDealer).toHaveBeenCalledWith(
+      "contract-id",
+      "dealer-id",
+      "cancelled",
+    );
   });
 
   it("rejects already processed cancellations", async () => {
     cancellationRepositoryMocks.findById.mockResolvedValue({
       _id: "cancellation-id",
+      contract: { toString: () => "contract-id" },
       dealer: { toString: () => "dealer-id" },
       status: "processed",
     });
