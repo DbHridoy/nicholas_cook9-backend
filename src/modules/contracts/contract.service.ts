@@ -22,6 +22,7 @@ export const createContract = (payload: CreateContractPayload, dealerId: string)
   contractRepository.create({
     ...payload,
     dealer: dealerId,
+    status: "active",
     expiry: calculateExpiry(payload.saleDate, payload.term),
   });
 
