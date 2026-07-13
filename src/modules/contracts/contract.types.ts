@@ -1,6 +1,9 @@
 export const coveredProducts = ["carpet", "lvp_laminate", "hardwood", "tile"] as const;
 export type CoveredProduct = (typeof coveredProducts)[number];
 
+export const contractStatuses = ["active", "cancelled"] as const;
+export type ContractStatus = (typeof contractStatuses)[number];
+
 export const contractTerms = [
   "3_year_coverage",
   "5_year_coverage",

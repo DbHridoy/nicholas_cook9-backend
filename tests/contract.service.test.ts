@@ -43,6 +43,7 @@ describe("contract service", () => {
     expect(repositoryMocks.create).toHaveBeenCalledWith({
       ...payload,
       dealer: "dealer-id",
+      status: "active",
       expiry: new Date("2028-05-30T00:00:00.000Z"),
     });
   });
@@ -69,6 +70,7 @@ describe("contract service", () => {
     expect(repositoryMocks.create).toHaveBeenCalledWith({
       ...payload,
       dealer: "dealer-id",
+      status: "active",
       expiry: new Date("2026-06-10T00:00:00.000Z"),
     });
   });

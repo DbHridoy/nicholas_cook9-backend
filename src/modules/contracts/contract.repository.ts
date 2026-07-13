@@ -9,6 +9,7 @@ type CreateContractPayload = Pick<
   | "saleDate"
   | "coveredProduct"
   | "term"
+  | "status"
   | "expiry"
   | "price"
   | "file"
@@ -27,6 +28,21 @@ export const contractRepository = {
 
   findById(id: string) {
     return Contract.findById(id);
+  },
+
+  updateStatusByIdAndDealer(id: string, dealer: string | Types.ObjectId, status: ContractEntity["status"]) {
+    return Contract.findOneAndUpdate(
+      {
+        _id: id,
+        dealer,
+      },
+      {
+        $set: {
+          status,
+        },
+      },
+      { new: true },
+    );
   },
 
   findOne(filter: QueryFilter<ContractEntity>) {
